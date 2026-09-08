@@ -35,6 +35,16 @@ except ImportError:
 # Mes atual (cache no nivel do modulo - ok para Lambda, reinicia periodicamente)
 _MES_ATUAL = datetime.datetime.now().month
 
+# ---------------------------------------------------------------- TTS censura
+# Alexa censura algumas palavras na fala. Mapeamos para apelidos seguros.
+APELIDOS_TTS = {
+    "chupim": "vira-bosta",
+}
+
+def _nome_fala(m):
+    """Retorna nome seguro para TTS (evita censura Alexa)."""
+    return APELIDOS_TTS.get(m["pt"], m["pt"])
+
 # ---------------------------------------------------------------- parser
 def _norm(s):
     s = unicodedata.normalize("NFD", (s or "").lower())
@@ -101,8 +111,13 @@ def parse(frase):
             out[chave] = (h[0][1], h[0][2])
     return out
 
-def ranquear(frase, k=3):
+def ranquear(frase, k=3, extra_atrib=None):
     a = parse(frase)
+    # Merge extra_atrib (from previous turns) — new parse overrides
+    if extra_atrib:
+        for key, val in extra_atrib.items():
+            if key not in a:
+                a[key] = val
     res = []
     for m in AVES:
         s = m["pr"]                                  # prior de abundancia (GBIF)
@@ -175,7 +190,8 @@ def _audio_ssml(m):
     return '<audio src="{}"/>'.format(url), cred
 
 def descrever(m):
-    p = ["{}, {}".format(m["pt"], m["tom"])]
+    nome = _nome_fala(m)
+    p = ["{}, {}".format(nome, m["tom"])]
     if m.get("viva"):
         p.append("com {}".format(m["viva"]))
     p.append("pesa cerca de {} gramas".format(int(m["g"])))
@@ -183,6 +199,26 @@ def descrever(m):
     if m.get("dieta"):
         p.append("come {}".format(m["dieta"]))
     return ", ".join(p) + "."
+
+def _info_especie(m):
+    """Retorna texto detalhado sobre a espécie para o InfoAveIntent."""
+    nome = _nome_fala(m)
+    partes = ["O {}, nome científico {}, família {}".format(nome, m["sci"], m.get("fam", "não informada"))]
+    partes.append("pesa cerca de {} gramas".format(int(m["g"])))
+    partes.append("vive em {}".format(m["amb"]))
+    if m.get("dieta"):
+        partes.append("come {}".format(m["dieta"]))
+    # Sazonalidade
+    if m.get("meses"):
+        saz = m["meses"][_MES_ATUAL - 1]
+        media = sum(m["meses"]) / 12
+        if media > 0 and saz / media > 1.3:
+            partes.append("É mais comum nessa época do ano")
+        elif media > 0 and saz / media < 0.5:
+            partes.append("É menos comum nessa época do ano")
+        else:
+            partes.append("É comum o ano todo por aqui")
+    return ", ".join(partes) + "."
 
 FALTA = {"cor": "de que cor ela era",
          "tam": "qual era mais ou menos o tamanho",
@@ -224,6 +260,19 @@ def _aves_de_hoje():
 
     return top5, novidades
 
+# ---------------------------------------------------------------- helpers sessao
+def _session_atrib_to_dict(val):
+    """Converte atributo de sessão de volta para dict com tuplas onde necessário."""
+    if isinstance(val, dict):
+        out = {}
+        for k, v in val.items():
+            if isinstance(v, list) and len(v) == 2:
+                out[k] = tuple(v)
+            else:
+                out[k] = v
+        return out
+    return val or {}
+
 # ---------------------------------------------------------------- handlers
 class LaunchRequestHandler(AbstractRequestHandler):
     def can_handle(self, handler_input):
@@ -245,33 +294,53 @@ class DescreverAveHandler(AbstractRequestHandler):
                 "Não entendi a descrição. Me diga a cor, o tamanho e onde você viu a ave."
             ).ask("Como ela era?").response
 
-        atrib, top = ranquear(desc, k=3)
-        if not atrib:
+        attrs = handler_input.attributes_manager.session_attributes
+
+        # Merge com desc_parcial de turnos anteriores
+        extra = _session_atrib_to_dict(attrs.get("desc_parcial"))
+
+        atrib, top = ranquear(desc, k=3, extra_atrib=extra if extra else None)
+        if not atrib and not extra:
             return handler_input.response_builder.speak(
                 "Não consegui identificar nenhuma característica. Tente dizer a cor, "
                 "o tamanho e onde você a viu. Por exemplo: uma ave pequena azul na mata."
             ).ask("Como era a ave?").response
 
+        # Merge: atrib (novo) + extra (anterior) — novo tem prioridade
+        merged = dict(extra) if extra else {}
+        merged.update(atrib)
+
         m1, p1 = top[0]
-        attrs = handler_input.attributes_manager.session_attributes
         attrs["cands"] = [x[0]["sci"] for x in top]
         attrs["ultima"] = m1["sci"]
 
+        nome1 = _nome_fala(m1)
+
         if p1 > 0.55:
-            fala = "Pelo que você descreveu, é bem provável que seja o {}. ".format(m1["pt"])
+            fala = "Pelo que você descreveu, é bem provável que seja o {}. ".format(nome1)
             fala += descrever(m1) + " "
+            attrs.pop("desc_parcial", None)
         elif p1 > 0.30:
-            fala = "O mais provável é o {}. Mas também pode ser o {}".format(m1["pt"], top[1][0]["pt"])
+            nome2 = _nome_fala(top[1][0])
+            fala = "O mais provável é o {}. Mas também pode ser o {}".format(nome1, nome2)
             if len(top) > 2:
-                fala += ", ou o {}".format(top[2][0]["pt"])
+                nome3 = _nome_fala(top[2][0])
+                fala += ", ou o {}".format(nome3)
             fala += ". "
+            attrs.pop("desc_parcial", None)
         else:
+            nomes_top = [_nome_fala(x[0]) for x in top]
             fala = "Não dá para ter certeza. As candidatas mais prováveis são: {}".format(
-                ", ".join(x[0]["pt"] for x in top)) + ". "
-            faltando = [k for k in FALTA if k not in atrib]
+                ", ".join(nomes_top)) + ". "
+            # Ask for the next missing attribute (not already in merged)
+            faltando = [k for k in FALTA if k not in merged]
             if faltando:
+                # Store merged for next turn
+                # Convert tuples to lists for JSON serialization
+                attrs["desc_parcial"] = {k: list(v) if isinstance(v, tuple) else v for k, v in merged.items()}
                 fala += "Para melhorar o palpite, me diga {}.".format(FALTA[faltando[0]])
                 return handler_input.response_builder.speak(fala).ask("Consegue me dizer?").response
+            attrs.pop("desc_parcial", None)
 
         if m1.get("a") and _HAS_S3:
             fala += "Quer ouvir o {} dele?".format(m1["a"].get("tp") or "canto")
@@ -313,15 +382,16 @@ class SomDaAveHandler(AbstractRequestHandler):
                 "como bem-te-vi, sabiá laranjeira ou joão de barro."
             ).ask("Qual ave você quer ouvir?").response
         handler_input.attributes_manager.session_attributes["ultima"] = m["sci"]
+        nome_fala = _nome_fala(m)
         ssml, cred = _audio_ssml(m)
         if not ssml:
             return handler_input.response_builder.speak(
                 "Ainda não tenho a gravação do {}. Mas posso te contar sobre ela: {} "
-                "Quer tentar outra?".format(m["pt"], descrever(m))
+                "Quer tentar outra?".format(nome_fala, descrever(m))
             ).ask("Quer ouvir outra ave?").response
         tp = m["a"].get("tp") or "vocalização"
         fala = "{} do {}. {} {} Quer ouvir outra?".format(
-            tp, m["pt"], ssml, cred)
+            tp, nome_fala, ssml, cred)
         return handler_input.response_builder.speak(fala).ask("Quer ouvir outra ave?").response
 
 class OuvirHandler(AbstractRequestHandler):
@@ -336,14 +406,15 @@ class OuvirHandler(AbstractRequestHandler):
             return handler_input.response_builder.speak(
                 "Me diga qual ave você quer ouvir."
             ).ask("Qual ave?").response
+        nome_fala = _nome_fala(m)
         ssml, cred = _audio_ssml(m)
         if not ssml:
             return handler_input.response_builder.speak(
-                "Ainda não tenho a gravação do {}. Quer descrever outra ave?".format(m["pt"])
+                "Ainda não tenho a gravação do {}. Quer descrever outra ave?".format(nome_fala)
             ).ask("Quer descrever outra ave?").response
         tp = m["a"].get("tp") or "vocalização"
         fala = "{} do {}. {} {} Quer descrever outra ave?".format(
-            tp, m["pt"], ssml, cred)
+            tp, nome_fala, ssml, cred)
         return handler_input.response_builder.speak(fala).ask("Quer descrever outra ave?").response
 
 class MaisDetalhesHandler(AbstractRequestHandler):
@@ -371,7 +442,7 @@ class AvesDeHojeHandler(AbstractRequestHandler):
                 "Não tenho dados de sazonalidade suficientes. Quer identificar uma ave?"
             ).ask("Descreva a ave que você viu.").response
 
-        nomes = [item[2]["pt"] for item in top5]
+        nomes = [_nome_fala(item[2]) for item in top5]
         if len(nomes) >= 5:
             lista = ", ".join(nomes[:4]) + " e " + nomes[4]
         else:
@@ -381,7 +452,7 @@ class AvesDeHojeHandler(AbstractRequestHandler):
 
         if novidades:
             nov = novidades[0]
-            fala += " E uma novidade: o {} costuma aparecer nessa época!".format(nov["pt"])
+            fala += " E uma novidade: o {} costuma aparecer nessa época!".format(_nome_fala(nov))
 
         # Guardar a primeira como última para permitir follow-up
         attrs = handler_input.attributes_manager.session_attributes
@@ -446,12 +517,13 @@ class QuizRespostaHandler(AbstractRequestHandler):
         attrs["quiz_total"] = attrs.get("quiz_total", 0) + 1
         acertou = m_resp is not None and m_certo is not None and m_resp["sci"] == m_certo["sci"]
 
+        nome_certo = _nome_fala(m_certo) if m_certo else "uma ave desconhecida"
+
         if acertou:
             attrs["quiz_acertos"] = attrs.get("quiz_acertos", 0) + 1
             desc = descrever(m_certo) if m_certo else ""
-            fala = "Isso! É o {}! {} Quer tentar outro?".format(m_certo["pt"], desc)
+            fala = "Isso! É o {}! {} Quer tentar outro?".format(nome_certo, desc)
         else:
-            nome_certo = m_certo["pt"] if m_certo else "uma ave desconhecida"
             desc = descrever(m_certo) if m_certo else ""
             fala = "Não era não. Esse é o canto do {}. {} Quer tentar outro?".format(nome_certo, desc)
 
@@ -481,9 +553,58 @@ class QuizRespostaFallbackHandler(AbstractRequestHandler):
                 "Não tem nenhum quiz ativo. Quer começar um? Diga: quiz de cantos."
             ).ask("Quer jogar o quiz de cantos?").response
         handler_input.attributes_manager.session_attributes["ultima"] = m["sci"]
-        fala = "Sobre o {}: {} Quer saber mais ou ouvir o canto?".format(m["pt"], descrever(m))
+        nome_fala = _nome_fala(m)
+        fala = "Sobre o {}: {} Quer saber mais ou ouvir o canto?".format(nome_fala, descrever(m))
         return handler_input.response_builder.speak(fala).ask("Quer ouvir o canto?").response
 
+# ---------------------------------------------------------------- NaoSeiIntent (quiz "não sei")
+class NaoSeiHandler(AbstractRequestHandler):
+    def can_handle(self, handler_input):
+        return ask_utils.is_intent_name("NaoSeiIntent")(handler_input)
+    def handle(self, handler_input):
+        attrs = handler_input.attributes_manager.session_attributes
+        sci_certo = attrs.get("quiz_resposta")
+        if sci_certo:
+            m_certo = next((x for x in AVES if x["sci"] == sci_certo), None)
+            attrs["quiz_total"] = attrs.get("quiz_total", 0) + 1
+            attrs.pop("quiz_resposta", None)
+            if m_certo:
+                nome_certo = _nome_fala(m_certo)
+                fala = "A resposta era {}. {} Quer tentar outro?".format(nome_certo, descrever(m_certo))
+            else:
+                fala = "A resposta era uma ave que não encontrei nos dados. Quer tentar outro?"
+            return handler_input.response_builder.speak(fala).ask("Quer tentar outro?").response
+        # Fora do quiz
+        return handler_input.response_builder.speak(
+            "Tudo bem! Se quiser, descreva a ave que você viu ou peça um quiz de cantos."
+        ).ask("O que você quer fazer?").response
+
+# ---------------------------------------------------------------- InfoAveIntent (species info)
+class InfoAveHandler(AbstractRequestHandler):
+    def can_handle(self, handler_input):
+        return ask_utils.is_intent_name("InfoAveIntent")(handler_input)
+    def handle(self, handler_input):
+        slots = handler_input.request_envelope.request.intent.slots or {}
+        slot = slots.get("especie")
+        nome = (slot.value if slot else "") or ""
+        m = None
+        if slot is not None:
+            sid = _id_resolvido(slot)
+            if sid:
+                sci = sid.replace("_", " ")
+                m = next((x for x in AVES if x["sci"] == sci), None)
+        if m is None:
+            m = buscar_especie(nome)
+        if not m:
+            return handler_input.response_builder.speak(
+                "Não encontrei essa ave na minha lista. Tente dizer o nome popular, "
+                "como bem-te-vi, sabiá laranjeira ou joão de barro."
+            ).ask("Sobre qual ave você quer saber?").response
+        handler_input.attributes_manager.session_attributes["ultima"] = m["sci"]
+        fala = _info_especie(m) + " Quer ouvir o canto ou saber sobre outra ave?"
+        return handler_input.response_builder.speak(fala).ask("Quer ouvir o canto?").response
+
+# ---------------------------------------------------------------- standard handlers
 class HelpHandler(AbstractRequestHandler):
     def can_handle(self, handler_input):
         return ask_utils.is_intent_name("AMAZON.HelpIntent")(handler_input)
@@ -493,6 +614,9 @@ class HelpHandler(AbstractRequestHandler):
                 "Você também pode pedir: qual é o canto do bem-te-vi. "
                 "Ou diga: que aves posso ver hoje, para saber as aves do mês. "
                 "E se quiser testar seus conhecimentos, diga: quiz de cantos. "
+                "Para saber sobre uma espécie, diga: me fala sobre o tucano. "
+                "E para saber quem criou esta skill ou de onde vêm os cantos, "
+                "diga: quem criou esta skill. "
                 "Eu conheço 390 espécies da região de São Paulo.")
         return handler_input.response_builder.speak(fala).ask("Como era a ave que você viu?").response
 
@@ -511,10 +635,80 @@ class CancelStopHandler(AbstractRequestHandler):
             fala = "Até a próxima. Bons passarinhos!"
         return handler_input.response_builder.speak(fala).set_should_end_session(True).response
 
+# ---------------------------------------------------------------- Sobre a skill / Evolutiva
+class SobreHandler(AbstractRequestHandler):
+    def can_handle(self, handler_input):
+        return ask_utils.is_intent_name("SobreIntent")(handler_input)
+    def handle(self, handler_input):
+        fala = (
+            "O Aves Brasil foi criado pela Evolutiva Negócios Digitais, "
+            "uma agência de tecnologia e inteligência artificial de São Paulo. "
+            "Os cantos são do xeno canto, uma biblioteca colaborativa mundial "
+            "de sons de aves, sob licença Creative Commons. "
+            "Os dados de identificação vêm do AVONET e do GBIF, ambos abertos. "
+            "Se quiser sugerir melhorias, reportar erros, ou pedir uma skill "
+            "personalizada para o seu negócio, mande um e-mail para "
+            "contato arroba evolutiva ponto dev. "
+            "Você também pode visitar evolutiva ponto dev. "
+            "Quer voltar a identificar aves?"
+        )
+        return handler_input.response_builder.speak(fala).ask(
+            "Quer descrever uma ave ou ouvir um canto?").response
+
+class FontesHandler(AbstractRequestHandler):
+    def can_handle(self, handler_input):
+        return ask_utils.is_intent_name("FontesIntent")(handler_input)
+    def handle(self, handler_input):
+        fala = (
+            "Os cantos vêm do xeno canto, uma biblioteca colaborativa com mais de "
+            "um milhão de gravações de aves do mundo todo, mantida por voluntários. "
+            "Cada gravação é creditada ao seu autor. "
+            "A identificação usa dados do AVONET, um banco com informações de "
+            "mais de onze mil espécies de aves, e do GBIF, que reúne registros "
+            "de ocorrência de biodiversidade do mundo inteiro. "
+            "Todos os dados são abertos e de acesso livre. "
+            "Quer identificar uma ave ou ouvir um canto?"
+        )
+        return handler_input.response_builder.speak(fala).ask(
+            "O que você quer fazer?").response
+
+# ---------------------------------------------------------------- Fallback contextual
 class FallbackHandler(AbstractRequestHandler):
     def can_handle(self, handler_input):
         return ask_utils.is_intent_name("AMAZON.FallbackIntent")(handler_input)
     def handle(self, handler_input):
+        attrs = handler_input.attributes_manager.session_attributes
+
+        # Context: mid-description follow-up
+        if attrs.get("desc_parcial"):
+            fala = ("Não entendi a resposta. Tente descrever a ave novamente com mais "
+                    "detalhes numa frase só. Por exemplo: era uma ave pequena preta no "
+                    "chão da lagoa.")
+            return handler_input.response_builder.speak(fala).ask(
+                "Como era a ave?").response
+
+        # Context: quiz active
+        if attrs.get("quiz_resposta"):
+            sci_certo = attrs["quiz_resposta"]
+            m_certo = next((x for x in AVES if x["sci"] == sci_certo), None)
+            attrs["quiz_total"] = attrs.get("quiz_total", 0) + 1
+            attrs.pop("quiz_resposta", None)
+            if m_certo:
+                nome_certo = _nome_fala(m_certo)
+                fala = "Não entendi. A resposta era {}. Quer tentar outro?".format(nome_certo)
+            else:
+                fala = "Não entendi. Quer tentar outro quiz?"
+            return handler_input.response_builder.speak(fala).ask(
+                "Quer tentar outro?").response
+
+        # Context: has a recent bird
+        if attrs.get("ultima"):
+            fala = ("Não entendi. Quer ouvir o canto, descrever outra ave, "
+                    "ou saber as aves do mês?")
+            return handler_input.response_builder.speak(fala).ask(
+                "O que você quer fazer?").response
+
+        # Default
         return handler_input.response_builder.speak(
             "Não entendi. Descreva a ave que você viu, com a cor, o tamanho e o lugar."
         ).ask("Como era a ave?").response
@@ -541,10 +735,14 @@ sb.add_request_handler(AvesDeHojeHandler())
 sb.add_request_handler(QuizHandler())
 sb.add_request_handler(QuizRespostaHandler())  # Before SomDaAve — takes priority when quiz active
 sb.add_request_handler(QuizRespostaFallbackHandler())  # When no quiz, treat as species lookup
+sb.add_request_handler(NaoSeiHandler())
+sb.add_request_handler(InfoAveHandler())
 sb.add_request_handler(SomDaAveHandler())
 sb.add_request_handler(OuvirHandler())
 sb.add_request_handler(MaisDetalhesHandler())
 sb.add_request_handler(HelpHandler())
+sb.add_request_handler(SobreHandler())
+sb.add_request_handler(FontesHandler())
 sb.add_request_handler(CancelStopHandler())
 sb.add_request_handler(FallbackHandler())
 sb.add_request_handler(SessionEndedHandler())
