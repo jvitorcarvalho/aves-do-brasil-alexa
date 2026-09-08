@@ -1,183 +1,364 @@
 # -*- coding: utf-8 -*-
+"""
+Aves do Brasil - skill Alexa (pt-BR)
+Identifica aves por descricao falada e toca vocalizacoes do xeno-canto.
 
-# This sample demonstrates handling intents from an Alexa skill using the Alexa Skills Kit SDK for Python.
-# Please visit https://alexa.design/cookbook for additional examples on implementing slots, dialog management,
-# session persistence, api calls, and more.
-# This sample is built using the handler classes approach in skill builder.
-import logging
+Motor: parser de fala livre -> pontuacao bayesiana sobre 390 especies
+da regiao de Sao Paulo (GBIF >=20 registros), tracos AVONET (CC BY 4.0)
+e cores HBW (CC0). Audios xeno-canto CC BY-NC-SA - USO NAO COMERCIAL.
+"""
+import json, os, re, math, unicodedata, logging
 import ask_sdk_core.utils as ask_utils
-
 from ask_sdk_core.skill_builder import SkillBuilder
-from ask_sdk_core.dispatch_components import AbstractRequestHandler
-from ask_sdk_core.dispatch_components import AbstractExceptionHandler
+from ask_sdk_core.dispatch_components import AbstractRequestHandler, AbstractExceptionHandler
 from ask_sdk_core.handler_input import HandlerInput
-
 from ask_sdk_model import Response
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
+_HERE = os.path.dirname(os.path.abspath(__file__))
+with open(os.path.join(_HERE, "aves.json"), encoding="utf-8") as _f:
+    AVES = json.load(_f)
 
-class LaunchRequestHandler(AbstractRequestHandler):
-    """Handler for Skill Launch."""
-    def can_handle(self, handler_input):
-        # type: (HandlerInput) -> bool
+# S3 com os MP3 ja convertidos p/ 48 kbps (ver converter_audio.sh).
+# Vazio => a skill nao toca audio, so descreve. Preencha apos subir os arquivos.
+AUDIO_BASE = os.environ.get("AUDIO_BASE_URL", "").rstrip("/")
 
-        return ask_utils.is_request_type("LaunchRequest")(handler_input)
+# ---------------------------------------------------------------- parser
+def _norm(s):
+    s = unicodedata.normalize("NFD", (s or "").lower())
+    return "".join(c for c in s if unicodedata.category(c) != "Mn")
 
-    def handle(self, handler_input):
-        # type: (HandlerInput) -> Response
-        speak_output = "Welcome, you can say Hello or Help. Which would you like to try?"
+CORES = [("preto",0,["pret","escur","negr"]), ("branco",1,["branc"]),
+    ("cinza",2,["cinz","pardacent"]),
+    ("marrom",3,["marrom","pard","castanh","barrent","cafe"]),
+    ("amarelo",4,["amarel","dourad"]), ("verde",5,["verd"]),
+    ("azul",6,["azul","azuis","azulad"]),
+    ("vermelho",7,["vermelh","laranj","alaranj","ruiv","avermelh","rux"])]
+AMB = [("cidade ou quintal",0,["quintal","cidade","casa","jardim","rua","muro","fio","poste","varanda","telhad","urban","praca"]),
+    ("parque arborizado",1,["parque","arboriz","pomar","chacar","sitio"]),
+    ("mata",2,["mata","floresta","bosque","mato","arvored","serra","reserva"]),
+    ("campo aberto",3,["campo","pasto","aberto","gramad","capim","plantac","lavour"]),
+    ("beira d'agua",4,["lagoa","lago","brejo","beira d agua","beira da agua","na agua","rio","represa","riach","corrego","banhad"]),
+    ("praia ou mar",5,["praia","mar ","no mar","costa","litoral","mangue"])]
+POS = [("empoleirada",0,["galh","poleir","arvore","fio","cerca","empoleir","pousad","muro","antena","telhad","arbust"]),
+    ("no chao",1,["chao","terra","grama","solo","andando","caminhand","ciscand","gramad"]),
+    ("voando",2,["voand","voo","voava","planand","sobrevo","circuland","alcando voo"]),
+    ("na agua",3,["nadand","mergulh","boiand","na agua"])]
+TAM = [("do tamanho de um beija-flor",0,["beija-flor","beija flor","besouro","minusc","pequenin","dedo","polegar","abelh"]),
+    ("do tamanho de um pardal",1,["pardal","pequen","canari","tico-tico","tico tico"]),
+    ("do tamanho de um sabia",2,["sabia","bem-te-vi","bem te vi","medi","sanhac"]),
+    ("do tamanho de uma pomba",3,["pomba","pombo","galinha pequena"]),
+    ("do tamanho de um gaviao",4,["gaviao","grande","galinha"]),
+    ("bem grande",5,["urubu","garca","muito grande","enorme","gigante","seriema","ema"])]
+BICO = [("bico curto e grosso",0,["bico curt","bico gross","bico forte","bico conic","bico pequen"]),
+    ("bico medio",1,["bico medi","bico normal"]),
+    ("bico fino",2,["bico fin","bico alongad","bico delgad"]),
+    ("bico muito longo",3,["bico muito long","bico enorme","bicao","bico grande","bico comprid"])]
+CAUDA = [("cauda curta",0,["cauda curt","rabo curt","sem rabo","rabinh"]),
+    ("cauda media",1,["cauda medi","rabo medi"]),
+    ("cauda longa",2,["cauda long","rabo long","cauda compri","rabo compri"]),
+    ("cauda muito longa",3,["cauda muito long","rabo muito long","rabo enorme"])]
 
-        return (
-            handler_input.response_builder
-                .speak(speak_output)
-                .ask(speak_output)
-                .response
-        )
+def _achar(t, tabela):
+    """Casa em fronteira de palavra; padrao mais longo vence (evita 'mar' em 'marrom')."""
+    hits = []
+    for nome, idx, pats in tabela:
+        for pat in pats:
+            for m in re.finditer(r"(?<![a-z])" + re.escape(pat), t):
+                hits.append((m.start(), idx, nome, len(pat)))
+    if not hits:
+        return None
+    hits.sort(key=lambda x: (-x[3], x[0]))
+    return hits
 
+def parse(frase):
+    t = _norm(frase)
+    out = {}
+    c = _achar(t, CORES)
+    if c:
+        vistos = []
+        for _, idx, nome, _l in c:
+            if idx not in [v[0] for v in vistos]:
+                vistos.append((idx, nome))
+        out["cor"] = vistos[0]
+        if len(vistos) > 1:
+            out["cor2"] = vistos[1]
+    for chave, tab in (("amb",AMB), ("pos",POS), ("bico",BICO), ("cauda",CAUDA), ("tam",TAM)):
+        h = _achar(t, tab)
+        if h:
+            out[chave] = (h[0][1], h[0][2])
+    return out
 
-class HelloWorldIntentHandler(AbstractRequestHandler):
-    """Handler for Hello World Intent."""
-    def can_handle(self, handler_input):
-        # type: (HandlerInput) -> bool
-        return ask_utils.is_intent_name("HelloWorldIntent")(handler_input)
+def ranquear(frase, k=3):
+    a = parse(frase)
+    res = []
+    for m in AVES:
+        s = m["pr"]                                  # prior de abundancia (GBIF)
+        if "cor"   in a: s += m["c"][a["cor"][0]]
+        if "cor2"  in a: s += 0.6 * m["c"][a["cor2"][0]]
+        if "amb"   in a: s += m["h"][a["amb"][0]]
+        if "pos"   in a: s += m["p"][a["pos"][0]]
+        if "tam"   in a: s += m["s"][a["tam"][0]]
+        if "bico"  in a: s += m["b"][a["bico"][0]]
+        if "cauda" in a: s += m["t"][a["cauda"][0]]
+        res.append((s, m))
+    res.sort(key=lambda x: -x[0])
+    mx = res[0][0]
+    tot = sum(math.exp(s - mx) for s, _ in res)
+    return a, [(m, math.exp(s - mx) / tot) for s, m in res[:k]]
 
-    def handle(self, handler_input):
-        # type: (HandlerInput) -> Response
-        speak_output = "Hello World!"
+def _chaves(m):
+    """Nome CBRO + apelidos regionais, normalizados e sem hifen."""
+    ks = [m["pt"]] + (m.get("alt") or [])
+    out = []
+    for k in ks:
+        k = _norm(k)
+        out.append(k)
+        out.append(k.replace("-", " "))
+    return set(out)
 
-        return (
-            handler_input.response_builder
-                .speak(speak_output)
-                # .ask("add a reprompt if you want to keep the session open for the user to respond")
-                .response
-        )
+def buscar_especie(nome):
+    """Casa nome popular falado com a especie.
 
-
-class HelpIntentHandler(AbstractRequestHandler):
-    """Handler for Help Intent."""
-    def can_handle(self, handler_input):
-        # type: (HandlerInput) -> bool
-        return ask_utils.is_intent_name("AMAZON.HelpIntent")(handler_input)
-
-    def handle(self, handler_input):
-        # type: (HandlerInput) -> Response
-        speak_output = "You can say hello to me! How can I help?"
-
-        return (
-            handler_input.response_builder
-                .speak(speak_output)
-                .ask(speak_output)
-                .response
-        )
-
-
-class CancelOrStopIntentHandler(AbstractRequestHandler):
-    """Single handler for Cancel and Stop Intent."""
-    def can_handle(self, handler_input):
-        # type: (HandlerInput) -> bool
-        return (ask_utils.is_intent_name("AMAZON.CancelIntent")(handler_input) or
-                ask_utils.is_intent_name("AMAZON.StopIntent")(handler_input))
-
-    def handle(self, handler_input):
-        # type: (HandlerInput) -> Response
-        speak_output = "Goodbye!"
-
-        return (
-            handler_input.response_builder
-                .speak(speak_output)
-                .response
-        )
-
-class FallbackIntentHandler(AbstractRequestHandler):
-    """Single handler for Fallback Intent."""
-    def can_handle(self, handler_input):
-        # type: (HandlerInput) -> bool
-        return ask_utils.is_intent_name("AMAZON.FallbackIntent")(handler_input)
-
-    def handle(self, handler_input):
-        # type: (HandlerInput) -> Response
-        logger.info("In FallbackIntentHandler")
-        speech = "Hmm, I'm not sure. You can say Hello or Help. What would you like to do?"
-        reprompt = "I didn't catch that. What can I help you with?"
-
-        return handler_input.response_builder.speak(speech).ask(reprompt).response
-
-class SessionEndedRequestHandler(AbstractRequestHandler):
-    """Handler for Session End."""
-    def can_handle(self, handler_input):
-        # type: (HandlerInput) -> bool
-        return ask_utils.is_request_type("SessionEndedRequest")(handler_input)
-
-    def handle(self, handler_input):
-        # type: (HandlerInput) -> Response
-
-        # Any cleanup logic goes here.
-
-        return handler_input.response_builder.response
-
-
-class IntentReflectorHandler(AbstractRequestHandler):
-    """The intent reflector is used for interaction model testing and debugging.
-    It will simply repeat the intent the user said. You can create custom handlers
-    for your intents by defining them above, then also adding them to the request
-    handler chain below.
+    A Alexa transcreve fala sem hifen ('bem te vi', 'joao de barro'), entao a
+    comparacao ignora hifens e usa a lista de apelidos regionais.
     """
-    def can_handle(self, handler_input):
-        # type: (HandlerInput) -> bool
-        return ask_utils.is_request_type("IntentRequest")(handler_input)
+    n = _norm(nome).strip()
+    if not n:
+        return None
+    n = re.sub(r"^(o |a |um |uma |do |da |de |os |as )+", "", n).strip()
+    n = re.sub(r"\s+", " ", n.replace("-", " "))
+    if not n:
+        return None
+    exatos = [m for m in AVES if n in _chaves(m)]
+    if exatos:
+        return max(exatos, key=lambda m: m["n"])
+    contem = [m for m in AVES if any(n in k or k in n for k in _chaves(m))]
+    if contem:
+        return max(contem, key=lambda m: m["n"])
+    tokens = [x for x in n.split(" ") if len(x) > 3]
+    if tokens:
+        cand = [m for m in AVES if any(all(tk in k for tk in tokens) for k in _chaves(m))]
+        if cand:
+            return max(cand, key=lambda m: m["n"])
+    return None
 
-    def handle(self, handler_input):
-        # type: (HandlerInput) -> Response
-        intent_name = ask_utils.get_intent_name(handler_input)
-        speak_output = "You just triggered " + intent_name + "."
+# ---------------------------------------------------------------- fala
+def _audio_ssml(m):
+    """<audio> exige MP3 HTTPS 48 kbps, 16/22.05/24 kHz, <=240 s."""
+    if not m.get("a") or not AUDIO_BASE:
+        return None, None
+    url = "{}/{}.mp3".format(AUDIO_BASE, m["sci"].replace(" ", "_"))
+    a = m["a"]
+    cred = "Gravação de {}, xeno canto {}.".format(a.get("aut") or "autor não informado", a.get("xc") or "")
+    return '<audio src="{}"/>'.format(url), cred
 
-        return (
-            handler_input.response_builder
-                .speak(speak_output)
-                # .ask("add a reprompt if you want to keep the session open for the user to respond")
-                .response
-        )
+def descrever(m):
+    p = ["{}, {}".format(m["pt"], m["tom"])]
+    if m.get("viva"):
+        p.append("com {}".format(m["viva"]))
+    p.append("pesa cerca de {} gramas".format(int(m["g"])))
+    p.append("vive em {}".format(m["amb"]))
+    if m.get("dieta"):
+        p.append("come {}".format(m["dieta"]))
+    return ", ".join(p) + "."
 
+FALTA = {"cor": "de que cor ela era",
+         "tam": "qual era mais ou menos o tamanho",
+         "amb": "onde você estava quando viu",
+         "pos": "se ela estava no chão, empoleirada ou voando"}
+
+AVISO_PLAYBACK = ("Uma dica: evite repetir gravações no campo. "
+                  "O som atrai as aves e atrapalha o território e a reprodução delas.")
+
+# ---------------------------------------------------------------- handlers
+class LaunchRequestHandler(AbstractRequestHandler):
+    def can_handle(self, i):
+        return ask_utils.is_request_type("LaunchRequest")(i)
+    def handle(self, i):
+        fala = ("Bem-vindo ao Aves do Brasil. Descreva a ave que você viu: "
+                "a cor, o tamanho e onde estava. Por exemplo: vi uma ave parda "
+                "com peito amarelo, do tamanho de um sabiá, no quintal.")
+        return i.response_builder.speak(fala).ask("Como era a ave que você viu?").response
+
+class DescreverAveHandler(AbstractRequestHandler):
+    def can_handle(self, i):
+        return ask_utils.is_intent_name("DescreverAveIntent")(i)
+    def handle(self, i):
+        slots = i.request_envelope.request.intent.slots or {}
+        desc = (slots.get("descricao").value if slots.get("descricao") else "") or ""
+        if not desc.strip():
+            return i.response_builder.speak(
+                "Não entendi a descrição. Me diga a cor, o tamanho e onde você viu a ave."
+            ).ask("Como ela era?").response
+
+        atrib, top = ranquear(desc, k=3)
+        if not atrib:
+            return i.response_builder.speak(
+                "Não consegui identificar nenhuma característica. Tente dizer a cor, "
+                "o tamanho e onde você a viu. Por exemplo: uma ave pequena azul na mata."
+            ).ask("Como era a ave?").response
+
+        m1, p1 = top[0]
+        attrs = i.attributes_manager.session_attributes
+        attrs["cands"] = [x[0]["sci"] for x in top]
+        attrs["ultima"] = m1["sci"]
+
+        if p1 > 0.55:
+            fala = "Pelo que você descreveu, é bem provável que seja o {}. ".format(m1["pt"])
+            fala += descrever(m1) + " "
+        elif p1 > 0.30:
+            fala = "O mais provável é o {}. Mas também pode ser o {}".format(m1["pt"], top[1][0]["pt"])
+            if len(top) > 2:
+                fala += ", ou o {}".format(top[2][0]["pt"])
+            fala += ". "
+        else:
+            fala = "Não dá para ter certeza. As candidatas mais prováveis são: {}".format(
+                ", ".join(x[0]["pt"] for x in top)) + ". "
+            faltando = [k for k in FALTA if k not in atrib]
+            if faltando:
+                fala += "Para melhorar o palpite, me diga {}.".format(FALTA[faltando[0]])
+                return i.response_builder.speak(fala).ask("Consegue me dizer?").response
+
+        if m1.get("a") and AUDIO_BASE:
+            fala += "Quer ouvir o {} dele?".format(m1["a"].get("tp") or "canto")
+            return i.response_builder.speak(fala).ask("Quer ouvir?").response
+        fala += "Quer descrever outra ave?"
+        return i.response_builder.speak(fala).ask("Quer descrever outra ave?").response
+
+def _id_resolvido(slot):
+    """ID canonico que o slot LISTA_AVES resolveu (ex.: 'Pitangus_sulphuratus').
+
+    Mais confiavel que casar o texto falado: a Alexa ja resolve sinonimos.
+    """
+    try:
+        for r in slot.resolutions.resolutions_per_authority:
+            if r.status.code.value == "ER_SUCCESS_MATCH":
+                return r.values[0].value.id
+    except Exception:
+        pass
+    return None
+
+class SomDaAveHandler(AbstractRequestHandler):
+    def can_handle(self, i):
+        return ask_utils.is_intent_name("SomDaAveIntent")(i)
+    def handle(self, i):
+        slots = i.request_envelope.request.intent.slots or {}
+        slot = slots.get("especie")
+        nome = (slot.value if slot else "") or ""
+        m = None
+        if slot is not None:
+            sid = _id_resolvido(slot)
+            if sid:
+                sci = sid.replace("_", " ")
+                m = next((x for x in AVES if x["sci"] == sci), None)
+        if m is None:
+            m = buscar_especie(nome)
+        if not m:
+            return i.response_builder.speak(
+                "Não encontrei essa ave na minha lista. Tente dizer o nome popular, "
+                "como bem-te-vi, sabiá laranjeira ou joão de barro."
+            ).ask("Qual ave você quer ouvir?").response
+        i.attributes_manager.session_attributes["ultima"] = m["sci"]
+        ssml, cred = _audio_ssml(m)
+        if not ssml:
+            return i.response_builder.speak(
+                "Ainda não tenho a gravação do {}. Mas posso te contar sobre ela: {} "
+                "Quer tentar outra?".format(m["pt"], descrever(m))
+            ).ask("Quer ouvir outra ave?").response
+        tp = m["a"].get("tp") or "vocalização"
+        fala = "Esse é o {} do {}. {} {} {} Quer ouvir outra?".format(
+            tp, m["pt"], ssml, cred, AVISO_PLAYBACK)
+        return i.response_builder.speak(fala).ask("Quer ouvir outra ave?").response
+
+class OuvirHandler(AbstractRequestHandler):
+    def can_handle(self, i):
+        return (ask_utils.is_intent_name("OuvirIntent")(i)
+                or ask_utils.is_intent_name("AMAZON.YesIntent")(i))
+    def handle(self, i):
+        attrs = i.attributes_manager.session_attributes
+        sci = attrs.get("ultima")
+        m = next((x for x in AVES if x["sci"] == sci), None)
+        if not m:
+            return i.response_builder.speak(
+                "Me diga qual ave você quer ouvir."
+            ).ask("Qual ave?").response
+        ssml, cred = _audio_ssml(m)
+        if not ssml:
+            return i.response_builder.speak(
+                "Ainda não tenho a gravação do {}. Quer descrever outra ave?".format(m["pt"])
+            ).ask("Quer descrever outra ave?").response
+        tp = m["a"].get("tp") or "vocalização"
+        fala = "Esse é o {} do {}. {} {} {} Quer descrever outra ave?".format(
+            tp, m["pt"], ssml, cred, AVISO_PLAYBACK)
+        return i.response_builder.speak(fala).ask("Quer descrever outra ave?").response
+
+class MaisDetalhesHandler(AbstractRequestHandler):
+    def can_handle(self, i):
+        return ask_utils.is_intent_name("MaisDetalhesIntent")(i)
+    def handle(self, i):
+        attrs = i.attributes_manager.session_attributes
+        scis = attrs.get("cands") or []
+        if not scis:
+            return i.response_builder.speak(
+                "Ainda não descrevemos nenhuma ave. Me conte como ela era."
+            ).ask("Como era a ave?").response
+        ms = [x for s in scis for x in AVES if x["sci"] == s]
+        fala = " ".join(descrever(m) for m in ms) + " Quer ouvir o canto de alguma?"
+        return i.response_builder.speak(fala).ask("Quer ouvir o canto de alguma?").response
+
+class HelpHandler(AbstractRequestHandler):
+    def can_handle(self, i):
+        return ask_utils.is_intent_name("AMAZON.HelpIntent")(i)
+    def handle(self, i):
+        fala = ("Eu ajudo a identificar aves pela descrição. Diga por exemplo: "
+                "vi uma ave parda com peito amarelo do tamanho de um sabiá no quintal. "
+                "Você também pode pedir: qual é o canto do bem-te-vi. "
+                "Eu conheço 390 espécies da região de São Paulo.")
+        return i.response_builder.speak(fala).ask("Como era a ave que você viu?").response
+
+class CancelStopHandler(AbstractRequestHandler):
+    def can_handle(self, i):
+        return (ask_utils.is_intent_name("AMAZON.CancelIntent")(i)
+                or ask_utils.is_intent_name("AMAZON.StopIntent")(i)
+                or ask_utils.is_intent_name("AMAZON.NoIntent")(i))
+    def handle(self, i):
+        return i.response_builder.speak("Até a próxima. Bons passarinhos!").set_should_end_session(True).response
+
+class FallbackHandler(AbstractRequestHandler):
+    def can_handle(self, i):
+        return ask_utils.is_intent_name("AMAZON.FallbackIntent")(i)
+    def handle(self, i):
+        return i.response_builder.speak(
+            "Não entendi. Descreva a ave que você viu, com a cor, o tamanho e o lugar."
+        ).ask("Como era a ave?").response
+
+class SessionEndedHandler(AbstractRequestHandler):
+    def can_handle(self, i):
+        return ask_utils.is_request_type("SessionEndedRequest")(i)
+    def handle(self, i):
+        return i.response_builder.response
 
 class CatchAllExceptionHandler(AbstractExceptionHandler):
-    """Generic error handling to capture any syntax or routing errors. If you receive an error
-    stating the request handler chain is not found, you have not implemented a handler for
-    the intent being invoked or included it in the skill builder below.
-    """
-    def can_handle(self, handler_input, exception):
-        # type: (HandlerInput, Exception) -> bool
+    def can_handle(self, i, exception):
         return True
-
-    def handle(self, handler_input, exception):
-        # type: (HandlerInput, Exception) -> Response
+    def handle(self, i, exception):
         logger.error(exception, exc_info=True)
-
-        speak_output = "Sorry, I had trouble doing what you asked. Please try again."
-
-        return (
-            handler_input.response_builder
-                .speak(speak_output)
-                .ask(speak_output)
-                .response
-        )
-
-# The SkillBuilder object acts as the entry point for your skill, routing all request and response
-# payloads to the handlers above. Make sure any new handlers or interceptors you've
-# defined are included below. The order matters - they're processed top to bottom.
-
+        return i.response_builder.speak(
+            "Desculpe, tive um problema. Pode tentar de novo?"
+        ).ask("Pode repetir?").response
 
 sb = SkillBuilder()
-
 sb.add_request_handler(LaunchRequestHandler())
-sb.add_request_handler(HelloWorldIntentHandler())
-sb.add_request_handler(HelpIntentHandler())
-sb.add_request_handler(CancelOrStopIntentHandler())
-sb.add_request_handler(FallbackIntentHandler())
-sb.add_request_handler(SessionEndedRequestHandler())
-sb.add_request_handler(IntentReflectorHandler()) # make sure IntentReflectorHandler is last so it doesn't override your custom intent handlers
-
+sb.add_request_handler(DescreverAveHandler())
+sb.add_request_handler(SomDaAveHandler())
+sb.add_request_handler(OuvirHandler())
+sb.add_request_handler(MaisDetalhesHandler())
+sb.add_request_handler(HelpHandler())
+sb.add_request_handler(CancelStopHandler())
+sb.add_request_handler(FallbackHandler())
+sb.add_request_handler(SessionEndedHandler())
 sb.add_exception_handler(CatchAllExceptionHandler())
-
 lambda_handler = sb.lambda_handler()
