@@ -168,6 +168,8 @@ def _audio_ssml(m):
     url = create_presigned_url(s3_path)
     if not url:
         return None, None
+    # SSML e XML: & na URL precisa virar &amp;
+    url = url.replace("&", "&amp;")
     a = m["a"]
     cred = "Gravação de {}.".format(a.get("aut") or "autor não informado")
     return '<audio src="{}"/>'.format(url), cred
