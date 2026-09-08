@@ -187,8 +187,7 @@ FALTA = {"cor": "de que cor ela era",
          "amb": "onde você estava quando viu",
          "pos": "se ela estava no chão, empoleirada ou voando"}
 
-AVISO_PLAYBACK = ("Uma dica: evite repetir gravações no campo. "
-                  "O som atrai as aves e atrapalha o território e a reprodução delas.")
+AVISO_PLAYBACK = "Lembre-se de usar gravações com moderação no campo."
 
 # ---------------------------------------------------------------- aves de hoje (Feature 1)
 def _aves_de_hoje():
