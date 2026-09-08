@@ -175,34 +175,34 @@ AVISO_PLAYBACK = ("Uma dica: evite repetir gravações no campo. "
 
 # ---------------------------------------------------------------- handlers
 class LaunchRequestHandler(AbstractRequestHandler):
-    def can_handle(self, i):
-        return ask_utils.is_request_type("LaunchRequest")(i)
-    def handle(self, i):
-        fala = ("Bem-vindo ao Aves do Brasil. Descreva a ave que você viu: "
+    def can_handle(self, handler_input):
+        return ask_utils.is_request_type("LaunchRequest")(handler_input)
+    def handle(self, handler_input):
+        fala = ("Bem-vindo ao Aves Brasil. Descreva a ave que você viu: "
                 "a cor, o tamanho e onde estava. Por exemplo: vi uma ave parda "
                 "com peito amarelo, do tamanho de um sabiá, no quintal.")
-        return i.response_builder.speak(fala).ask("Como era a ave que você viu?").response
+        return handler_input.response_builder.speak(fala).ask("Como era a ave que você viu?").response
 
 class DescreverAveHandler(AbstractRequestHandler):
-    def can_handle(self, i):
-        return ask_utils.is_intent_name("DescreverAveIntent")(i)
-    def handle(self, i):
-        slots = i.request_envelope.request.intent.slots or {}
+    def can_handle(self, handler_input):
+        return ask_utils.is_intent_name("DescreverAveIntent")(handler_input)
+    def handle(self, handler_input):
+        slots = handler_input.request_envelope.request.intent.slots or {}
         desc = (slots.get("descricao").value if slots.get("descricao") else "") or ""
         if not desc.strip():
-            return i.response_builder.speak(
+            return handler_input.response_builder.speak(
                 "Não entendi a descrição. Me diga a cor, o tamanho e onde você viu a ave."
             ).ask("Como ela era?").response
 
         atrib, top = ranquear(desc, k=3)
         if not atrib:
-            return i.response_builder.speak(
+            return handler_input.response_builder.speak(
                 "Não consegui identificar nenhuma característica. Tente dizer a cor, "
                 "o tamanho e onde você a viu. Por exemplo: uma ave pequena azul na mata."
             ).ask("Como era a ave?").response
 
         m1, p1 = top[0]
-        attrs = i.attributes_manager.session_attributes
+        attrs = handler_input.attributes_manager.session_attributes
         attrs["cands"] = [x[0]["sci"] for x in top]
         attrs["ultima"] = m1["sci"]
 
@@ -220,13 +220,13 @@ class DescreverAveHandler(AbstractRequestHandler):
             faltando = [k for k in FALTA if k not in atrib]
             if faltando:
                 fala += "Para melhorar o palpite, me diga {}.".format(FALTA[faltando[0]])
-                return i.response_builder.speak(fala).ask("Consegue me dizer?").response
+                return handler_input.response_builder.speak(fala).ask("Consegue me dizer?").response
 
         if m1.get("a") and AUDIO_BASE:
             fala += "Quer ouvir o {} dele?".format(m1["a"].get("tp") or "canto")
-            return i.response_builder.speak(fala).ask("Quer ouvir?").response
+            return handler_input.response_builder.speak(fala).ask("Quer ouvir?").response
         fala += "Quer descrever outra ave?"
-        return i.response_builder.speak(fala).ask("Quer descrever outra ave?").response
+        return handler_input.response_builder.speak(fala).ask("Quer descrever outra ave?").response
 
 def _id_resolvido(slot):
     """ID canonico que o slot LISTA_AVES resolveu (ex.: 'Pitangus_sulphuratus').
@@ -242,10 +242,10 @@ def _id_resolvido(slot):
     return None
 
 class SomDaAveHandler(AbstractRequestHandler):
-    def can_handle(self, i):
-        return ask_utils.is_intent_name("SomDaAveIntent")(i)
-    def handle(self, i):
-        slots = i.request_envelope.request.intent.slots or {}
+    def can_handle(self, handler_input):
+        return ask_utils.is_intent_name("SomDaAveIntent")(handler_input)
+    def handle(self, handler_input):
+        slots = handler_input.request_envelope.request.intent.slots or {}
         slot = slots.get("especie")
         nome = (slot.value if slot else "") or ""
         m = None
@@ -257,96 +257,96 @@ class SomDaAveHandler(AbstractRequestHandler):
         if m is None:
             m = buscar_especie(nome)
         if not m:
-            return i.response_builder.speak(
+            return handler_input.response_builder.speak(
                 "Não encontrei essa ave na minha lista. Tente dizer o nome popular, "
                 "como bem-te-vi, sabiá laranjeira ou joão de barro."
             ).ask("Qual ave você quer ouvir?").response
-        i.attributes_manager.session_attributes["ultima"] = m["sci"]
+        handler_input.attributes_manager.session_attributes["ultima"] = m["sci"]
         ssml, cred = _audio_ssml(m)
         if not ssml:
-            return i.response_builder.speak(
+            return handler_input.response_builder.speak(
                 "Ainda não tenho a gravação do {}. Mas posso te contar sobre ela: {} "
                 "Quer tentar outra?".format(m["pt"], descrever(m))
             ).ask("Quer ouvir outra ave?").response
         tp = m["a"].get("tp") or "vocalização"
         fala = "Esse é o {} do {}. {} {} {} Quer ouvir outra?".format(
             tp, m["pt"], ssml, cred, AVISO_PLAYBACK)
-        return i.response_builder.speak(fala).ask("Quer ouvir outra ave?").response
+        return handler_input.response_builder.speak(fala).ask("Quer ouvir outra ave?").response
 
 class OuvirHandler(AbstractRequestHandler):
-    def can_handle(self, i):
-        return (ask_utils.is_intent_name("OuvirIntent")(i)
-                or ask_utils.is_intent_name("AMAZON.YesIntent")(i))
-    def handle(self, i):
-        attrs = i.attributes_manager.session_attributes
+    def can_handle(self, handler_input):
+        return (ask_utils.is_intent_name("OuvirIntent")(handler_input)
+                or ask_utils.is_intent_name("AMAZON.YesIntent")(handler_input))
+    def handle(self, handler_input):
+        attrs = handler_input.attributes_manager.session_attributes
         sci = attrs.get("ultima")
         m = next((x for x in AVES if x["sci"] == sci), None)
         if not m:
-            return i.response_builder.speak(
+            return handler_input.response_builder.speak(
                 "Me diga qual ave você quer ouvir."
             ).ask("Qual ave?").response
         ssml, cred = _audio_ssml(m)
         if not ssml:
-            return i.response_builder.speak(
+            return handler_input.response_builder.speak(
                 "Ainda não tenho a gravação do {}. Quer descrever outra ave?".format(m["pt"])
             ).ask("Quer descrever outra ave?").response
         tp = m["a"].get("tp") or "vocalização"
         fala = "Esse é o {} do {}. {} {} {} Quer descrever outra ave?".format(
             tp, m["pt"], ssml, cred, AVISO_PLAYBACK)
-        return i.response_builder.speak(fala).ask("Quer descrever outra ave?").response
+        return handler_input.response_builder.speak(fala).ask("Quer descrever outra ave?").response
 
 class MaisDetalhesHandler(AbstractRequestHandler):
-    def can_handle(self, i):
-        return ask_utils.is_intent_name("MaisDetalhesIntent")(i)
-    def handle(self, i):
-        attrs = i.attributes_manager.session_attributes
+    def can_handle(self, handler_input):
+        return ask_utils.is_intent_name("MaisDetalhesIntent")(handler_input)
+    def handle(self, handler_input):
+        attrs = handler_input.attributes_manager.session_attributes
         scis = attrs.get("cands") or []
         if not scis:
-            return i.response_builder.speak(
+            return handler_input.response_builder.speak(
                 "Ainda não descrevemos nenhuma ave. Me conte como ela era."
             ).ask("Como era a ave?").response
         ms = [x for s in scis for x in AVES if x["sci"] == s]
         fala = " ".join(descrever(m) for m in ms) + " Quer ouvir o canto de alguma?"
-        return i.response_builder.speak(fala).ask("Quer ouvir o canto de alguma?").response
+        return handler_input.response_builder.speak(fala).ask("Quer ouvir o canto de alguma?").response
 
 class HelpHandler(AbstractRequestHandler):
-    def can_handle(self, i):
-        return ask_utils.is_intent_name("AMAZON.HelpIntent")(i)
-    def handle(self, i):
+    def can_handle(self, handler_input):
+        return ask_utils.is_intent_name("AMAZON.HelpIntent")(handler_input)
+    def handle(self, handler_input):
         fala = ("Eu ajudo a identificar aves pela descrição. Diga por exemplo: "
                 "vi uma ave parda com peito amarelo do tamanho de um sabiá no quintal. "
                 "Você também pode pedir: qual é o canto do bem-te-vi. "
                 "Eu conheço 390 espécies da região de São Paulo.")
-        return i.response_builder.speak(fala).ask("Como era a ave que você viu?").response
+        return handler_input.response_builder.speak(fala).ask("Como era a ave que você viu?").response
 
 class CancelStopHandler(AbstractRequestHandler):
-    def can_handle(self, i):
-        return (ask_utils.is_intent_name("AMAZON.CancelIntent")(i)
-                or ask_utils.is_intent_name("AMAZON.StopIntent")(i)
-                or ask_utils.is_intent_name("AMAZON.NoIntent")(i))
-    def handle(self, i):
-        return i.response_builder.speak("Até a próxima. Bons passarinhos!").set_should_end_session(True).response
+    def can_handle(self, handler_input):
+        return (ask_utils.is_intent_name("AMAZON.CancelIntent")(handler_input)
+                or ask_utils.is_intent_name("AMAZON.StopIntent")(handler_input)
+                or ask_utils.is_intent_name("AMAZON.NoIntent")(handler_input))
+    def handle(self, handler_input):
+        return handler_input.response_builder.speak("Até a próxima. Bons passarinhos!").set_should_end_session(True).response
 
 class FallbackHandler(AbstractRequestHandler):
-    def can_handle(self, i):
-        return ask_utils.is_intent_name("AMAZON.FallbackIntent")(i)
-    def handle(self, i):
-        return i.response_builder.speak(
+    def can_handle(self, handler_input):
+        return ask_utils.is_intent_name("AMAZON.FallbackIntent")(handler_input)
+    def handle(self, handler_input):
+        return handler_input.response_builder.speak(
             "Não entendi. Descreva a ave que você viu, com a cor, o tamanho e o lugar."
         ).ask("Como era a ave?").response
 
 class SessionEndedHandler(AbstractRequestHandler):
-    def can_handle(self, i):
-        return ask_utils.is_request_type("SessionEndedRequest")(i)
-    def handle(self, i):
-        return i.response_builder.response
+    def can_handle(self, handler_input):
+        return ask_utils.is_request_type("SessionEndedRequest")(handler_input)
+    def handle(self, handler_input):
+        return handler_input.response_builder.response
 
 class CatchAllExceptionHandler(AbstractExceptionHandler):
-    def can_handle(self, i, exception):
+    def can_handle(self, handler_input, exception):
         return True
-    def handle(self, i, exception):
+    def handle(self, handler_input, exception):
         logger.error(exception, exc_info=True)
-        return i.response_builder.speak(
+        return handler_input.response_builder.speak(
             "Desculpe, tive um problema. Pode tentar de novo?"
         ).ask("Pode repetir?").response
 
