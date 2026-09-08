@@ -169,7 +169,7 @@ def _audio_ssml(m):
     if not url:
         return None, None
     a = m["a"]
-    cred = "Gravação de {}, xeno canto {}.".format(a.get("aut") or "autor não informado", a.get("xc") or "")
+    cred = "Gravação de {}.".format(a.get("aut") or "autor não informado")
     return '<audio src="{}"/>'.format(url), cred
 
 def descrever(m):
@@ -318,8 +318,8 @@ class SomDaAveHandler(AbstractRequestHandler):
                 "Quer tentar outra?".format(m["pt"], descrever(m))
             ).ask("Quer ouvir outra ave?").response
         tp = m["a"].get("tp") or "vocalização"
-        fala = "Esse é o {} do {}. {} {} {} Quer ouvir outra?".format(
-            tp, m["pt"], ssml, cred, AVISO_PLAYBACK)
+        fala = "{} do {}. {} {} Quer ouvir outra?".format(
+            tp, m["pt"], ssml, cred)
         return handler_input.response_builder.speak(fala).ask("Quer ouvir outra ave?").response
 
 class OuvirHandler(AbstractRequestHandler):
@@ -340,8 +340,8 @@ class OuvirHandler(AbstractRequestHandler):
                 "Ainda não tenho a gravação do {}. Quer descrever outra ave?".format(m["pt"])
             ).ask("Quer descrever outra ave?").response
         tp = m["a"].get("tp") or "vocalização"
-        fala = "Esse é o {} do {}. {} {} {} Quer descrever outra ave?".format(
-            tp, m["pt"], ssml, cred, AVISO_PLAYBACK)
+        fala = "{} do {}. {} {} Quer descrever outra ave?".format(
+            tp, m["pt"], ssml, cred)
         return handler_input.response_builder.speak(fala).ask("Quer descrever outra ave?").response
 
 class MaisDetalhesHandler(AbstractRequestHandler):
