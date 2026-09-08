@@ -1,0 +1,2643 @@
+{
+ "interactionModel": {
+  "languageModel": {
+   "invocationName": "aves brasil",
+   "intents": [
+    {
+     "name": "AMAZON.CancelIntent",
+     "samples": []
+    },
+    {
+     "name": "AMAZON.HelpIntent",
+     "samples": []
+    },
+    {
+     "name": "AMAZON.StopIntent",
+     "samples": []
+    },
+    {
+     "name": "AMAZON.NavigateHomeIntent",
+     "samples": []
+    },
+    {
+     "name": "AMAZON.FallbackIntent",
+     "samples": []
+    },
+    {
+     "name": "AMAZON.YesIntent",
+     "samples": []
+    },
+    {
+     "name": "AMAZON.NoIntent",
+     "samples": []
+    },
+    {
+     "name": "QuizRespostaIntent",
+     "slots": [
+      {
+       "name": "resposta",
+       "type": "LISTA_AVES"
+      }
+     ],
+     "samples": [
+      "e o {resposta}",
+      "acho que e o {resposta}",
+      "{resposta}",
+      "deve ser o {resposta}",
+      "parece o {resposta}",
+      "e um {resposta}",
+      "seria o {resposta}",
+      "o {resposta}"
+     ]
+    },
+    {
+     "name": "CatchAllIntent",
+     "slots": [
+      {
+       "name": "texto",
+       "type": "AMAZON.SearchQuery"
+      }
+     ],
+     "samples": [
+      "eu quero {texto}",
+      "me diga {texto}",
+      "quero saber {texto}",
+      "vi {texto}",
+      "tem {texto}",
+      "qual {texto}",
+      "como {texto}",
+      "quem {texto}",
+      "de onde {texto}",
+      "toca {texto}",
+      "ouvir {texto}",
+      "fala {texto}",
+      "diga {texto}",
+      "sobre {texto}",
+      "conta {texto}",
+      "quero {texto}",
+      "preciso {texto}",
+      "procura {texto}",
+      "busca {texto}",
+      "pesquisa {texto}",
+      "eu vi {texto}",
+      "apareceu {texto}",
+      "avistei {texto}",
+      "identifica {texto}",
+      "era {texto}",
+      "uma {texto}",
+      "esse {texto}",
+      "essa {texto}"
+     ]
+    }
+   ],
+   "types": [
+    {
+     "name": "LISTA_AVES",
+     "values": [
+      {
+       "id": "Pitangus_sulphuratus",
+       "name": {
+        "value": "bem te vi",
+        "synonyms": [
+         "bentevi"
+        ]
+       }
+      },
+      {
+       "id": "Thraupis_sayaca",
+       "name": {
+        "value": "sanhaco cinzento",
+        "synonyms": [
+         "sanhaco",
+         "sanhacu",
+         "sambaco"
+        ]
+       }
+      },
+      {
+       "id": "Brotogeris_tirica",
+       "name": {
+        "value": "periquito rico",
+        "synonyms": [
+         "periquito",
+         "tuim",
+         "tiriba"
+        ]
+       }
+      },
+      {
+       "id": "Turdus_rufiventris",
+       "name": {
+        "value": "sabia laranjeira",
+        "synonyms": [
+         "sabia",
+         "sabia vermelho"
+        ]
+       }
+      },
+      {
+       "id": "Coereba_flaveola",
+       "name": {
+        "value": "cambacica",
+        "synonyms": [
+         "caga sebo",
+         "sebinho",
+         "sebito"
+        ]
+       }
+      },
+      {
+       "id": "Columba_livia",
+       "name": {
+        "value": "pombo domestico",
+        "synonyms": [
+         "pombo",
+         "pomba",
+         "pombo comum"
+        ]
+       }
+      },
+      {
+       "id": "Coragyps_atratus",
+       "name": {
+        "value": "urubu de cabeca preta",
+        "synonyms": [
+         "urubu",
+         "urubu preto"
+        ]
+       }
+      },
+      {
+       "id": "Columbina_talpacoti",
+       "name": {
+        "value": "rolinha roxa",
+        "synonyms": [
+         "rolinha",
+         "caldo de feijao",
+         "rola"
+        ]
+       }
+      },
+      {
+       "id": "Turdus_leucomelas",
+       "name": {
+        "value": "sabia barranco",
+        "synonyms": [
+         "sabia branco",
+         "caraxue"
+        ]
+       }
+      },
+      {
+       "id": "Patagioenas_picazuro",
+       "name": {
+        "value": "pombao",
+        "synonyms": [
+         "asa branca",
+         "pomba asa branca"
+        ]
+       }
+      },
+      {
+       "id": "Furnarius_rufus",
+       "name": {
+        "value": "joao de barro",
+        "synonyms": [
+         "joao",
+         "forneiro",
+         "oleiro"
+        ]
+       }
+      },
+      {
+       "id": "Zenaida_auriculata",
+       "name": {
+        "value": "avoante",
+        "synonyms": [
+         "pomba de bando",
+         "arribacao",
+         "pomba amargosa"
+        ]
+       }
+      },
+      {
+       "id": "Eupetomena_macroura",
+       "name": {
+        "value": "beija flor tesoura",
+        "synonyms": [
+         "beija flor",
+         "tesourao",
+         "colibri"
+        ]
+       }
+      },
+      {
+       "id": "Cyclarhis_gujanensis",
+       "name": {
+        "value": "pitiguari",
+        "synonyms": [
+         "gente de fora vem"
+        ]
+       }
+      },
+      {
+       "id": "Thraupis_palmarum",
+       "name": {
+        "value": "sanhaco do coqueiro",
+        "synonyms": [
+         "sanhaco coqueiro"
+        ]
+       }
+      },
+      {
+       "id": "Vanellus_chilensis",
+       "name": {
+        "value": "quero quero",
+        "synonyms": [
+         "teteu"
+        ]
+       }
+      },
+      {
+       "id": "Tyrannus_melancholicus",
+       "name": {
+        "value": "suiriri",
+        "synonyms": [
+         "siriri"
+        ]
+       }
+      },
+      {
+       "id": "Mimus_saturninus",
+       "name": {
+        "value": "sabia do campo",
+        "synonyms": [
+         "calandra",
+         "sabia poca"
+        ]
+       }
+      },
+      {
+       "id": "Amazona_aestiva",
+       "name": {
+        "value": "papagaio verdadeiro",
+        "synonyms": [
+         "papagaio",
+         "louro"
+        ]
+       }
+      },
+      {
+       "id": "Diopsittaca_nobilis",
+       "name": {
+        "value": "maracana pequena",
+        "synonyms": [
+         "maracana",
+         "maracana nobre",
+         "ararinha"
+        ]
+       }
+      },
+      {
+       "id": "Caracara_plancus",
+       "name": {
+        "value": "carcara",
+        "synonyms": [
+         "caracara",
+         "gaviao carcara"
+        ]
+       }
+      },
+      {
+       "id": "Celeus_flavescens",
+       "name": {
+        "value": "pica pau de cabeca amarela"
+       }
+      },
+      {
+       "id": "Megarynchus_pitangua",
+       "name": {
+        "value": "neinei",
+        "synonyms": [
+         "nei nei",
+         "bentevi de bico chato"
+        ]
+       }
+      },
+      {
+       "id": "Passer_domesticus",
+       "name": {
+        "value": "pardal",
+        "synonyms": [
+         "pardal domestico",
+         "pardau"
+        ]
+       }
+      },
+      {
+       "id": "Piaya_cayana",
+       "name": {
+        "value": "alma de gato",
+        "synonyms": [
+         "alma gato"
+        ]
+       }
+      },
+      {
+       "id": "Myiozetetes_similis",
+       "name": {
+        "value": "bentevizinho",
+        "synonyms": [
+         "bem te vi pequeno",
+         "bentivizinho"
+        ]
+       }
+      },
+      {
+       "id": "Zonotrichia_capensis",
+       "name": {
+        "value": "tico tico",
+        "synonyms": [
+         "ticotico"
+        ]
+       }
+      },
+      {
+       "id": "Gallinula_chloropus",
+       "name": {
+        "value": "frango d agua comum",
+        "synonyms": [
+         "frango d agua",
+         "galinha d agua",
+         "frango dagua"
+        ]
+       }
+      },
+      {
+       "id": "Phalacrocorax_brasilianus",
+       "name": {
+        "value": "bigua",
+        "synonyms": [
+         "mergulhao preto"
+        ]
+       }
+      },
+      {
+       "id": "Ardea_alba",
+       "name": {
+        "value": "garca branca grande",
+        "synonyms": [
+         "garca",
+         "garca branca",
+         "garca grande"
+        ]
+       }
+      },
+      {
+       "id": "Basileuterus_culicivorus",
+       "name": {
+        "value": "pula pula"
+       }
+      },
+      {
+       "id": "Rupornis_magnirostris",
+       "name": {
+        "value": "gaviao carijo",
+        "synonyms": [
+         "gaviao",
+         "gaviao ripina",
+         "indaie"
+        ]
+       }
+      },
+      {
+       "id": "Egretta_thula",
+       "name": {
+        "value": "garca branca pequena",
+        "synonyms": [
+         "garca pequena",
+         "garcinha"
+        ]
+       }
+      },
+      {
+       "id": "Tachyphonus_coronatus",
+       "name": {
+        "value": "tie preto",
+        "synonyms": [
+         "tico tico preto"
+        ]
+       }
+      },
+      {
+       "id": "Fluvicola_nengeta",
+       "name": {
+        "value": "lavadeira mascarada",
+        "synonyms": [
+         "lavadeira",
+         "viuvinha"
+        ]
+       }
+      },
+      {
+       "id": "Camptostoma_obsoletum",
+       "name": {
+        "value": "risadinha"
+       }
+      },
+      {
+       "id": "Crotophaga_ani",
+       "name": {
+        "value": "anu preto",
+        "synonyms": [
+         "anu",
+         "anum",
+         "anum preto"
+        ]
+       }
+      },
+      {
+       "id": "Molothrus_bonariensis",
+       "name": {
+        "value": "chupim",
+        "synonyms": [
+         "vira bosta",
+         "chupin"
+        ]
+       }
+      },
+      {
+       "id": "Dendrocygna_viduata",
+       "name": {
+        "value": "irere",
+        "synonyms": [
+         "marreca viuvinha",
+         "marreca"
+        ]
+       }
+      },
+      {
+       "id": "Myiodynastes_maculatus",
+       "name": {
+        "value": "bem te vi rajado",
+        "synonyms": [
+         "bentevi rajado",
+         "bem te vi escuro"
+        ]
+       }
+      },
+      {
+       "id": "Butorides_striata",
+       "name": {
+        "value": "socozinho",
+        "synonyms": [
+         "soco",
+         "garcote"
+        ]
+       }
+      },
+      {
+       "id": "Synallaxis_spixi",
+       "name": {
+        "value": "joao tenenem",
+        "synonyms": [
+         "tenenem",
+         "benterere"
+        ]
+       }
+      },
+      {
+       "id": "Cranioleuca_pallida",
+       "name": {
+        "value": "arredio palido",
+        "synonyms": [
+         "arredio"
+        ]
+       }
+      },
+      {
+       "id": "Amazonetta_brasiliensis",
+       "name": {
+        "value": "pe vermelho",
+        "synonyms": [
+         "marreca pe vermelho",
+         "ananai"
+        ]
+       }
+      },
+      {
+       "id": "Nycticorax_nycticorax",
+       "name": {
+        "value": "savacu",
+        "synonyms": [
+         "goraz",
+         "soco dorminhoco"
+        ]
+       }
+      },
+      {
+       "id": "Conirostrum_speciosum",
+       "name": {
+        "value": "figuinha de rabo castanho",
+        "synonyms": [
+         "figuinha"
+        ]
+       }
+      },
+      {
+       "id": "Todirostrum_cinereum",
+       "name": {
+        "value": "ferreirinho relogio",
+        "synonyms": [
+         "ferreirinho",
+         "relogio"
+        ]
+       }
+      },
+      {
+       "id": "Ardea_cocoi",
+       "name": {
+        "value": "garca moura",
+        "synonyms": [
+         "garca cocoi",
+         "soco grande"
+        ]
+       }
+      },
+      {
+       "id": "Setophaga_pitiayumi",
+       "name": {
+        "value": "mariquita"
+       }
+      },
+      {
+       "id": "Machetornis_rixosa",
+       "name": {
+        "value": "suiriri cavaleiro",
+        "synonyms": [
+         "cavaleiro",
+         "bem te vi do gado"
+        ]
+       }
+      },
+      {
+       "id": "Leptotila_verreauxi",
+       "name": {
+        "value": "juriti pupu",
+        "synonyms": [
+         "juriti",
+         "juruti"
+        ]
+       }
+      },
+      {
+       "id": "Ramphastos_dicolorus",
+       "name": {
+        "value": "tucano de bico verde",
+        "synonyms": [
+         "tucano",
+         "tucano bicolor"
+        ]
+       }
+      },
+      {
+       "id": "Aramides_saracura",
+       "name": {
+        "value": "saracura do mato",
+        "synonyms": [
+         "saracura",
+         "saracura do brejo"
+        ]
+       }
+      },
+      {
+       "id": "Podilymbus_podiceps",
+       "name": {
+        "value": "mergulhao cacador",
+        "synonyms": [
+         "mergulhao"
+        ]
+       }
+      },
+      {
+       "id": "Colaptes_campestris",
+       "name": {
+        "value": "pica pau do campo",
+        "synonyms": [
+         "pica pau campo"
+        ]
+       }
+      },
+      {
+       "id": "Pyrrhura_frontalis",
+       "name": {
+        "value": "tiriba de testa vermelha",
+        "synonyms": [
+         "periquitao"
+        ]
+       }
+      },
+      {
+       "id": "Hirundinea_ferruginea",
+       "name": {
+        "value": "gibao de couro",
+        "synonyms": [
+         "gibao"
+        ]
+       }
+      },
+      {
+       "id": "Estrilda_astrild",
+       "name": {
+        "value": "bico de lacre",
+        "synonyms": [
+         "bico lacre"
+        ]
+       }
+      },
+      {
+       "id": "Dryocopus_lineatus",
+       "name": {
+        "value": "pica pau de banda branca",
+        "synonyms": [
+         "pica pau grande"
+        ]
+       }
+      },
+      {
+       "id": "Sicalis_flaveola",
+       "name": {
+        "value": "canario da terra",
+        "synonyms": [
+         "canario",
+         "canario chapinha",
+         "canarinho"
+        ]
+       }
+      },
+      {
+       "id": "Thlypopsis_sordida",
+       "name": {
+        "value": "sai canario",
+        "synonyms": [
+         "canario do brejo"
+        ]
+       }
+      },
+      {
+       "id": "Colaptes_melanochloros",
+       "name": {
+        "value": "pica pau verde barrado",
+        "synonyms": [
+         "pica pau carijo",
+         "pica pau verde"
+        ]
+       }
+      },
+      {
+       "id": "Certhiaxis_cinnamomeus",
+       "name": {
+        "value": "curutie"
+       }
+      },
+      {
+       "id": "Thalurania_glaucopis",
+       "name": {
+        "value": "beija flor de fronte violeta"
+       }
+      },
+      {
+       "id": "Jacana_jacana",
+       "name": {
+        "value": "jacana",
+        "synonyms": [
+         "piacoca"
+        ]
+       }
+      },
+      {
+       "id": "Chloroceryle_amazona",
+       "name": {
+        "value": "martim pescador verde",
+        "synonyms": [
+         "martim pescador"
+        ]
+       }
+      },
+      {
+       "id": "Melanerpes_candidus",
+       "name": {
+        "value": "pica pau branco"
+       }
+      },
+      {
+       "id": "Empidonomus_varius",
+       "name": {
+        "value": "peitica",
+        "synonyms": [
+         "bentevi peitica"
+        ]
+       }
+      },
+      {
+       "id": "Falco_femoralis",
+       "name": {
+        "value": "falcao de coleira"
+       }
+      },
+      {
+       "id": "Elaenia_flavogaster",
+       "name": {
+        "value": "maria e dia"
+       }
+      },
+      {
+       "id": "Tolmomyias_sulphurescens",
+       "name": {
+        "value": "bico chato de orelha preta"
+       }
+      },
+      {
+       "id": "Anhinga_anhinga",
+       "name": {
+        "value": "carara"
+       }
+      },
+      {
+       "id": "Pionus_maximiliani",
+       "name": {
+        "value": "maitaca"
+       }
+      },
+      {
+       "id": "Guira_guira",
+       "name": {
+        "value": "anum branco"
+       }
+      },
+      {
+       "id": "Euphonia_chlorotica",
+       "name": {
+        "value": "fim fim"
+       }
+      },
+      {
+       "id": "Penelope_obscura",
+       "name": {
+        "value": "jacu acu"
+       }
+      },
+      {
+       "id": "Picumnus_temminckii",
+       "name": {
+        "value": "pica pau anao de coleira"
+       }
+      },
+      {
+       "id": "Phaethornis_pretrei",
+       "name": {
+        "value": "eremita do planalto"
+       }
+      },
+      {
+       "id": "Accipiter_striatus",
+       "name": {
+        "value": "gaviao de canela fina"
+       }
+      },
+      {
+       "id": "Stilpnia_cayana",
+       "name": {
+        "value": "saira amarela"
+       }
+      },
+      {
+       "id": "Phimosus_infuscatus",
+       "name": {
+        "value": "macarico do banhado"
+       }
+      },
+      {
+       "id": "Mesembrinibis_cayennensis",
+       "name": {
+        "value": "corocoro"
+       }
+      },
+      {
+       "id": "Dacnis_cayana",
+       "name": {
+        "value": "dacnis azul"
+       }
+      },
+      {
+       "id": "Pardirallus_nigricans",
+       "name": {
+        "value": "frango d agua sombrio"
+       }
+      },
+      {
+       "id": "Thamnophilus_caerulescens",
+       "name": {
+        "value": "choca da mata"
+       }
+      },
+      {
+       "id": "Synallaxis_ruficapilla",
+       "name": {
+        "value": "pichorore"
+       }
+      },
+      {
+       "id": "Aramus_guarauna",
+       "name": {
+        "value": "saracurao"
+       }
+      },
+      {
+       "id": "Tyrannus_savana",
+       "name": {
+        "value": "tyrannus savana"
+       }
+      },
+      {
+       "id": "Sittasomus_griseicapillus",
+       "name": {
+        "value": "arapacu verde"
+       }
+      },
+      {
+       "id": "Cairina_moschata",
+       "name": {
+        "value": "pato selvagem"
+       }
+      },
+      {
+       "id": "Megaceryle_torquata",
+       "name": {
+        "value": "guarda rios de barriga ruiva"
+       }
+      },
+      {
+       "id": "Lepidocolaptes_angustirostris",
+       "name": {
+        "value": "arapacu de cerrado"
+       }
+      },
+      {
+       "id": "Chlorostilbon_lucidus",
+       "name": {
+        "value": "besourinho de bico vermelho"
+       }
+      },
+      {
+       "id": "Chiroxiphia_caudata",
+       "name": {
+        "value": "tangara"
+       }
+      },
+      {
+       "id": "Spinus_magellanicus",
+       "name": {
+        "value": "pintassilgo"
+       }
+      },
+      {
+       "id": "Pachyramphus_validus",
+       "name": {
+        "value": "caneleiro de chapeu preto"
+       }
+      },
+      {
+       "id": "Turdus_flavipes",
+       "name": {
+        "value": "sabia una"
+       }
+      },
+      {
+       "id": "Volatinia_jacarina",
+       "name": {
+        "value": "sementeiro preto e azul"
+       }
+      },
+      {
+       "id": "Saltator_similis",
+       "name": {
+        "value": "trinca ferro verdadeiro"
+       }
+      },
+      {
+       "id": "Anas_bahamensis",
+       "name": {
+        "value": "arrabio de faces brancas"
+       }
+      },
+      {
+       "id": "Paroaria_coronata",
+       "name": {
+        "value": "cardeal do sul"
+       }
+      },
+      {
+       "id": "Himantopus_mexicanus",
+       "name": {
+        "value": "perna de pau"
+       }
+      },
+      {
+       "id": "Trichothraupis_melanops",
+       "name": {
+        "value": "tie de topete"
+       }
+      },
+      {
+       "id": "Xiphorhynchus_fuscus",
+       "name": {
+        "value": "arapacu rajado"
+       }
+      },
+      {
+       "id": "Bubulcus_ibis",
+       "name": {
+        "value": "garca boieira"
+       }
+      },
+      {
+       "id": "Parabuteo_unicinctus",
+       "name": {
+        "value": "butio de harris"
+       }
+      },
+      {
+       "id": "Dendrocygna_bicolor",
+       "name": {
+        "value": "dendrocisne bicolor"
+       }
+      },
+      {
+       "id": "Chrysomus_ruficapillus",
+       "name": {
+        "value": "arumara"
+       }
+      },
+      {
+       "id": "Myiothlypis_leucoblephara",
+       "name": {
+        "value": "mariquita assobiadeira"
+       }
+      },
+      {
+       "id": "Ramphastos_toco",
+       "name": {
+        "value": "tucano de peito branco"
+       }
+      },
+      {
+       "id": "Rostrhamus_sociabilis",
+       "name": {
+        "value": "caracoleiro comum"
+       }
+      },
+      {
+       "id": "Lathrotriccus_euleri",
+       "name": {
+        "value": "caca moscas de euler"
+       }
+      },
+      {
+       "id": "Dysithamnus_mentalis",
+       "name": {
+        "value": "choquinha lisa"
+       }
+      },
+      {
+       "id": "Euphonia_pectoralis",
+       "name": {
+        "value": "gaturamo serrador"
+       }
+      },
+      {
+       "id": "Herpsilochmus_rufimarginatus",
+       "name": {
+        "value": "chorozinho de asa vermelha"
+       }
+      },
+      {
+       "id": "Megascops_choliba",
+       "name": {
+        "value": "cabure orelhudo"
+       }
+      },
+      {
+       "id": "Hypoedaleus_guttatus",
+       "name": {
+        "value": "chocao carijo"
+       }
+      },
+      {
+       "id": "Serpophaga_subcristata",
+       "name": {
+        "value": "alegrinho"
+       }
+      },
+      {
+       "id": "Paroaria_dominicana",
+       "name": {
+        "value": "galo de campina"
+       }
+      },
+      {
+       "id": "Podiceps_major",
+       "name": {
+        "value": "mergulhao grande"
+       }
+      },
+      {
+       "id": "Spatula_versicolor",
+       "name": {
+        "value": "marreca cricri"
+       }
+      },
+      {
+       "id": "Athene_cunicularia",
+       "name": {
+        "value": "coruja cupinzeira"
+       }
+      },
+      {
+       "id": "Lochmias_nematura",
+       "name": {
+        "value": "corre ramos ribeirinho"
+       }
+      },
+      {
+       "id": "Turdus_albicollis",
+       "name": {
+        "value": "sabia coleira"
+       }
+      },
+      {
+       "id": "Dendrocygna_autumnalis",
+       "name": {
+        "value": "dendrocisne de barriga preta"
+       }
+      },
+      {
+       "id": "Leptopogon_amaurocephalus",
+       "name": {
+        "value": "cabecudo"
+       }
+      },
+      {
+       "id": "Icterus_cayanensis",
+       "name": {
+        "value": "corrupiao d ombros amarelos"
+       }
+      },
+      {
+       "id": "Picumnus_cirratus",
+       "name": {
+        "value": "pica pau anao barrado"
+       }
+      },
+      {
+       "id": "Patagioenas_cayennensis",
+       "name": {
+        "value": "pomba galega"
+       }
+      },
+      {
+       "id": "Leptotila_rufaxilla",
+       "name": {
+        "value": "juriti gemedeira"
+       }
+      },
+      {
+       "id": "Phaethornis_eurynome",
+       "name": {
+        "value": "eremita escamoso"
+       }
+      },
+      {
+       "id": "Sporophila_caerulescens",
+       "name": {
+        "value": "coleirinho"
+       }
+      },
+      {
+       "id": "Tangara_desmaresti",
+       "name": {
+        "value": "saira verde"
+       }
+      },
+      {
+       "id": "Euphonia_violacea",
+       "name": {
+        "value": "eufonia violacea"
+       }
+      },
+      {
+       "id": "Conopophaga_lineata",
+       "name": {
+        "value": "chupa dente"
+       }
+      },
+      {
+       "id": "Buteo_brachyurus",
+       "name": {
+        "value": "butio de cauda curta"
+       }
+      },
+      {
+       "id": "Furnarius_figulus",
+       "name": {
+        "value": "casaca de couro da lama"
+       }
+      },
+      {
+       "id": "Pyriglena_leucoptera",
+       "name": {
+        "value": "olho de fogo d asa branca"
+       }
+      },
+      {
+       "id": "Trogon_surrucura",
+       "name": {
+        "value": "surucua de peito azul"
+       }
+      },
+      {
+       "id": "Myiophobus_fasciatus",
+       "name": {
+        "value": "filipe"
+       }
+      },
+      {
+       "id": "Crypturellus_obsoletus",
+       "name": {
+        "value": "inhambu guacu"
+       }
+      },
+      {
+       "id": "Florisuga_fusca",
+       "name": {
+        "value": "beija flor preto e branco"
+       }
+      },
+      {
+       "id": "Automolus_leucophthalmus",
+       "name": {
+        "value": "barranqueiro de olho branco"
+       }
+      },
+      {
+       "id": "Gnorimopsar_chopi",
+       "name": {
+        "value": "grauna"
+       }
+      },
+      {
+       "id": "Nyctidromus_albicollis",
+       "name": {
+        "value": "bacurau"
+       }
+      },
+      {
+       "id": "Cyanocorax_chrysops",
+       "name": {
+        "value": "gralha de crista negra"
+       }
+      },
+      {
+       "id": "Schiffornis_virescens",
+       "name": {
+        "value": "flautim"
+       }
+      },
+      {
+       "id": "Pipraeidea_melanonota",
+       "name": {
+        "value": "saira viuva"
+       }
+      },
+      {
+       "id": "Xenops_rutilans",
+       "name": {
+        "value": "bico virado carijo"
+       }
+      },
+      {
+       "id": "Tersina_viridis",
+       "name": {
+        "value": "sai andorinha"
+       }
+      },
+      {
+       "id": "Phacellodomus_erythrophthalmus",
+       "name": {
+        "value": "espinheiro d olho laranja"
+       }
+      },
+      {
+       "id": "Progne_chalybea",
+       "name": {
+        "value": "andorinha domestica grande"
+       }
+      },
+      {
+       "id": "Philydor_rufum",
+       "name": {
+        "value": "philydor rufum"
+       }
+      },
+      {
+       "id": "Pyrocephalus_rubinus",
+       "name": {
+        "value": "verao"
+       }
+      },
+      {
+       "id": "Malacoptila_striata",
+       "name": {
+        "value": "joao barbudo"
+       }
+      },
+      {
+       "id": "Chloroceryle_americana",
+       "name": {
+        "value": "guarda rios verde"
+       }
+      },
+      {
+       "id": "Habia_rubica",
+       "name": {
+        "value": "tie da mata"
+       }
+      },
+      {
+       "id": "Phyllomyias_fasciatus",
+       "name": {
+        "value": "piolhinho"
+       }
+      },
+      {
+       "id": "Falco_sparverius",
+       "name": {
+        "value": "falcao americano"
+       }
+      },
+      {
+       "id": "Elaenia_spectabilis",
+       "name": {
+        "value": "elenia grande"
+       }
+      },
+      {
+       "id": "Laterallus_melanophaius",
+       "name": {
+        "value": "acana de pescoco ferrugem"
+       }
+      },
+      {
+       "id": "Myiarchus_swainsoni",
+       "name": {
+        "value": "caca moscas de swainson"
+       }
+      },
+      {
+       "id": "Tangara_seledon",
+       "name": {
+        "value": "saira de sete cores"
+       }
+      },
+      {
+       "id": "Crypturellus_tataupa",
+       "name": {
+        "value": "nambu"
+       }
+      },
+      {
+       "id": "Thraupis_ornata",
+       "name": {
+        "value": "sanhacu de encontro amarelo"
+       }
+      },
+      {
+       "id": "Icterus_icterus",
+       "name": {
+        "value": "turpial"
+       }
+      },
+      {
+       "id": "Syrigma_sibilatrix",
+       "name": {
+        "value": "garca assobiadeira"
+       }
+      },
+      {
+       "id": "Hylophilus_poicilotis",
+       "name": {
+        "value": "verdinho coroado"
+       }
+      },
+      {
+       "id": "Platyrinchus_mystaceus",
+       "name": {
+        "value": "patinho"
+       }
+      },
+      {
+       "id": "Procnias_nudicollis",
+       "name": {
+        "value": "araponga"
+       }
+      },
+      {
+       "id": "Stelgidopteryx_ruficollis",
+       "name": {
+        "value": "andorinha serrador"
+       }
+      },
+      {
+       "id": "Leucochloris_albicollis",
+       "name": {
+        "value": "beija flor de papo branco"
+       }
+      },
+      {
+       "id": "Porphyrio_martinica",
+       "name": {
+        "value": "caimao americano"
+       }
+      },
+      {
+       "id": "Elaenia_parvirostris",
+       "name": {
+        "value": "guaracava de bico curto"
+       }
+      },
+      {
+       "id": "Pachyramphus_polychopterus",
+       "name": {
+        "value": "caneleiro d asa branca"
+       }
+      },
+      {
+       "id": "Cyanocorax_cristatellus",
+       "name": {
+        "value": "gaio de poupa revirada"
+       }
+      },
+      {
+       "id": "Tigrisoma_lineatum",
+       "name": {
+        "value": "soco boi"
+       }
+      },
+      {
+       "id": "Hemithraupis_ruficapilla",
+       "name": {
+        "value": "saira ferrugem"
+       }
+      },
+      {
+       "id": "Spizaetus_tyrannus",
+       "name": {
+        "value": "apacanim preto"
+       }
+      },
+      {
+       "id": "Patagioenas_plumbea",
+       "name": {
+        "value": "pomba santa cruz"
+       }
+      },
+      {
+       "id": "Myiornis_auricularis",
+       "name": {
+        "value": "miudinho"
+       }
+      },
+      {
+       "id": "Tringa_flavipes",
+       "name": {
+        "value": "perna amarela pequena"
+       }
+      },
+      {
+       "id": "Gallinago_paraguaiae",
+       "name": {
+        "value": "batuira"
+       }
+      },
+      {
+       "id": "Platalea_ajaja",
+       "name": {
+        "value": "colhereiro americano"
+       }
+      },
+      {
+       "id": "Chlorophonia_cyanea",
+       "name": {
+        "value": "bonito do campo"
+       }
+      },
+      {
+       "id": "Myiarchus_ferox",
+       "name": {
+        "value": "maria cavaleira"
+       }
+      },
+      {
+       "id": "Rhopias_gularis",
+       "name": {
+        "value": "choquinha de garganta pintada"
+       }
+      },
+      {
+       "id": "Progne_tapera",
+       "name": {
+        "value": "andorinha de peito castanho"
+       }
+      },
+      {
+       "id": "Satrapa_icterophrys",
+       "name": {
+        "value": "caca moscas de sobrancelha amarela"
+       }
+      },
+      {
+       "id": "Brotogeris_chiriri",
+       "name": {
+        "value": "periquito d asa amarela"
+       }
+      },
+      {
+       "id": "Mionectes_rufiventris",
+       "name": {
+        "value": "abre asa de cabeca cinza"
+       }
+      },
+      {
+       "id": "Rynchops_niger",
+       "name": {
+        "value": "talha mar"
+       }
+      },
+      {
+       "id": "Tachybaptus_dominicus",
+       "name": {
+        "value": "mergulhao pequeno"
+       }
+      },
+      {
+       "id": "Lurocalis_semitorquatus",
+       "name": {
+        "value": "noitibo de cauda curta"
+       }
+      },
+      {
+       "id": "Nemosia_pileata",
+       "name": {
+        "value": "saira de chapeu preto"
+       }
+      },
+      {
+       "id": "Anser_anser",
+       "name": {
+        "value": "ganso domestico"
+       }
+      },
+      {
+       "id": "Fulica_leucoptera",
+       "name": {
+        "value": "carqueja de bico amarelo"
+       }
+      },
+      {
+       "id": "Ammodramus_humeralis",
+       "name": {
+        "value": "tico tico campestre"
+       }
+      },
+      {
+       "id": "Euphonia_cyanocephala",
+       "name": {
+        "value": "gaturamo rei"
+       }
+      },
+      {
+       "id": "Geotrygon_montana",
+       "name": {
+        "value": "pariri"
+       }
+      },
+      {
+       "id": "Poecilotriccus_plumbeiceps",
+       "name": {
+        "value": "falso todi de faces canela"
+       }
+      },
+      {
+       "id": "Thamnophilus_ruficapillus",
+       "name": {
+        "value": "choca de chapeu vermelho"
+       }
+      },
+      {
+       "id": "Falco_peregrinus",
+       "name": {
+        "value": "falcao peregrino"
+       }
+      },
+      {
+       "id": "Dendrocolaptes_platyrostris",
+       "name": {
+        "value": "arapacu grande"
+       }
+      },
+      {
+       "id": "Asio_stygius",
+       "name": {
+        "value": "coruja diabo"
+       }
+      },
+      {
+       "id": "Phylloscartes_eximius",
+       "name": {
+        "value": "barbudinho"
+       }
+      },
+      {
+       "id": "Cacicus_haemorrhous",
+       "name": {
+        "value": "cacique d uropigio vermelho"
+       }
+      },
+      {
+       "id": "Cathartes_aura",
+       "name": {
+        "value": "camiranga"
+       }
+      },
+      {
+       "id": "Cygnus_atratus",
+       "name": {
+        "value": "cisne negro"
+       }
+      },
+      {
+       "id": "Contopus_cinereus",
+       "name": {
+        "value": "papa moscas cinzento"
+       }
+      },
+      {
+       "id": "Hemitriccus_orbitatus",
+       "name": {
+        "value": "falso todi d oculos"
+       }
+      },
+      {
+       "id": "Xolmis_cinereus",
+       "name": {
+        "value": "xolmis cinereus"
+       }
+      },
+      {
+       "id": "Drymophila_ferruginea",
+       "name": {
+        "value": "formigueiro trovoada"
+       }
+      },
+      {
+       "id": "Anas_flavirostris",
+       "name": {
+        "value": "marreca pardinha"
+       }
+      },
+      {
+       "id": "Todirostrum_poliocephalum",
+       "name": {
+        "value": "falso todi de loros dourados"
+       }
+      },
+      {
+       "id": "Sclerurus_scansor",
+       "name": {
+        "value": "vira folha"
+       }
+      },
+      {
+       "id": "Agelasticus_cyanopus",
+       "name": {
+        "value": "carretao"
+       }
+      },
+      {
+       "id": "Turdus_subalaris",
+       "name": {
+        "value": "sabia campainha"
+       }
+      },
+      {
+       "id": "Theristicus_caudatus",
+       "name": {
+        "value": "curicaca"
+       }
+      },
+      {
+       "id": "Tachycineta_leucorrhoa",
+       "name": {
+        "value": "andorinha d uropigio branco"
+       }
+      },
+      {
+       "id": "Tringa_solitaria",
+       "name": {
+        "value": "macarico solitario"
+       }
+      },
+      {
+       "id": "Fulica_rufifrons",
+       "name": {
+        "value": "carqueja de escudo roxo"
+       }
+      },
+      {
+       "id": "Pyroderus_scutatus",
+       "name": {
+        "value": "cotinga de barba vermelha"
+       }
+      },
+      {
+       "id": "Philydor_atricapillus",
+       "name": {
+        "value": "limpa folha coroado"
+       }
+      },
+      {
+       "id": "Pachyramphus_castaneus",
+       "name": {
+        "value": "caneleiro"
+       }
+      },
+      {
+       "id": "Nyctibius_griseus",
+       "name": {
+        "value": "mae da lua"
+       }
+      },
+      {
+       "id": "Elanus_leucurus",
+       "name": {
+        "value": "gaviao peneira"
+       }
+      },
+      {
+       "id": "Netta_erythrophthalma",
+       "name": {
+        "value": "paturi preta"
+       }
+      },
+      {
+       "id": "Calliphlox_amethystina",
+       "name": {
+        "value": "estrelinha"
+       }
+      },
+      {
+       "id": "Haplospiza_unicolor",
+       "name": {
+        "value": "cigarra bambu"
+       }
+      },
+      {
+       "id": "Attila_rufus",
+       "name": {
+        "value": "capitao de saira"
+       }
+      },
+      {
+       "id": "Pseudoleistes_guirahuro",
+       "name": {
+        "value": "passaro preto soldado"
+       }
+      },
+      {
+       "id": "Chamaeza_meruloides",
+       "name": {
+        "value": "tordo formigueiro criptico"
+       }
+      },
+      {
+       "id": "Hydropsalis_torquata",
+       "name": {
+        "value": "bacurau tesoura"
+       }
+      },
+      {
+       "id": "Tinamus_solitarius",
+       "name": {
+        "value": "macuco"
+       }
+      },
+      {
+       "id": "Syndactyla_rufosuperciliata",
+       "name": {
+        "value": "limpa folhas de sobrancelha fulva"
+       }
+      },
+      {
+       "id": "Xenops_minutus",
+       "name": {
+        "value": "bico virado"
+       }
+      },
+      {
+       "id": "Emberizoides_herbicola",
+       "name": {
+        "value": "canario do campo"
+       }
+      },
+      {
+       "id": "Odontophorus_capueira",
+       "name": {
+        "value": "codorniz d asa ponteada"
+       }
+      },
+      {
+       "id": "Pionopsitta_pileata",
+       "name": {
+        "value": "cuiu cuiu"
+       }
+      },
+      {
+       "id": "Calidris_melanotos",
+       "name": {
+        "value": "pilrito peitoral"
+       }
+      },
+      {
+       "id": "Thamnophilus_doliatus",
+       "name": {
+        "value": "choca barrada"
+       }
+      },
+      {
+       "id": "Legatus_leucophaius",
+       "name": {
+        "value": "bem te vi pirata"
+       }
+      },
+      {
+       "id": "Schistochlamys_ruficapillus",
+       "name": {
+        "value": "bico de veludo"
+       }
+      },
+      {
+       "id": "Elaenia_albiceps",
+       "name": {
+        "value": "guaracava de crista branca"
+       }
+      },
+      {
+       "id": "Pluvialis_dominica",
+       "name": {
+        "value": "batuiricu"
+       }
+      },
+      {
+       "id": "Sporophila_lineola",
+       "name": {
+        "value": "bigodinho"
+       }
+      },
+      {
+       "id": "Herpetotheres_cachinnans",
+       "name": {
+        "value": "deus quer um"
+       }
+      },
+      {
+       "id": "Netta_peposaca",
+       "name": {
+        "value": "marrecao"
+       }
+      },
+      {
+       "id": "Psarocolius_decumanus",
+       "name": {
+        "value": "japu"
+       }
+      },
+      {
+       "id": "Troglodytes_aedon",
+       "name": {
+        "value": "curruira de casa"
+       }
+      },
+      {
+       "id": "Elaenia_mesoleuca",
+       "name": {
+        "value": "tuque"
+       }
+      },
+      {
+       "id": "Crypturellus_parvirostris",
+       "name": {
+        "value": "inambu chororo"
+       }
+      },
+      {
+       "id": "Sporophila_leucoptera",
+       "name": {
+        "value": "cigarra rainha"
+       }
+      },
+      {
+       "id": "Leptodon_cayanensis",
+       "name": {
+        "value": "gaviao de cabeca cinza"
+       }
+      },
+      {
+       "id": "Hemithraupis_guira",
+       "name": {
+        "value": "saira de papo preto"
+       }
+      },
+      {
+       "id": "Micrastur_semitorquatus",
+       "name": {
+        "value": "falcao de colar"
+       }
+      },
+      {
+       "id": "Grallaria_varia",
+       "name": {
+        "value": "tovacucu"
+       }
+      },
+      {
+       "id": "Piculus_aurulentus",
+       "name": {
+        "value": "pica pau dourado"
+       }
+      },
+      {
+       "id": "Buteogallus_meridionalis",
+       "name": {
+        "value": "gaviao casco de couro"
+       }
+      },
+      {
+       "id": "Alopochen_aegyptiaca",
+       "name": {
+        "value": "ganso do egipto"
+       }
+      },
+      {
+       "id": "Xiphocolaptes_albicollis",
+       "name": {
+        "value": "arapacu de garganta branca"
+       }
+      },
+      {
+       "id": "Synallaxis_frontalis",
+       "name": {
+        "value": "petrim"
+       }
+      },
+      {
+       "id": "Pandion_haliaetus",
+       "name": {
+        "value": "pandion haliaetus"
+       }
+      },
+      {
+       "id": "Anser_cygnoides",
+       "name": {
+        "value": "ganso africano"
+       }
+      },
+      {
+       "id": "Corythopis_delalandi",
+       "name": {
+        "value": "estalador"
+       }
+      },
+      {
+       "id": "Anthracothorax_nigricollis",
+       "name": {
+        "value": "beija flor de veste preta"
+       }
+      },
+      {
+       "id": "Tringa_melanoleuca",
+       "name": {
+        "value": "macarico grande de perna amarela"
+       }
+      },
+      {
+       "id": "Synallaxis_albescens",
+       "name": {
+        "value": "ui pi"
+       }
+      },
+      {
+       "id": "Nomonyx_dominicus",
+       "name": {
+        "value": "marreca caucau"
+       }
+      },
+      {
+       "id": "Penelope_superciliaris",
+       "name": {
+        "value": "jacu do para"
+       }
+      },
+      {
+       "id": "Batara_cinerea",
+       "name": {
+        "value": "brugaiara"
+       }
+      },
+      {
+       "id": "Ictinia_plumbea",
+       "name": {
+        "value": "gaviao pombo"
+       }
+      },
+      {
+       "id": "Anas_platyrhynchos",
+       "name": {
+        "value": "pato real"
+       }
+      },
+      {
+       "id": "Manacus_manacus",
+       "name": {
+        "value": "rendeira"
+       }
+      },
+      {
+       "id": "Tityra_cayana",
+       "name": {
+        "value": "araponguinha de rabo preto"
+       }
+      },
+      {
+       "id": "Actitis_macularius",
+       "name": {
+        "value": "macarico maculado"
+       }
+      },
+      {
+       "id": "Ramphocelus_carbo",
+       "name": {
+        "value": "pipira vermelha"
+       }
+      },
+      {
+       "id": "Sporophila_nigricollis",
+       "name": {
+        "value": "cabecinha preta"
+       }
+      },
+      {
+       "id": "Phylloscartes_ventralis",
+       "name": {
+        "value": "borboletinha do mato"
+       }
+      },
+      {
+       "id": "Nystalus_chacuru",
+       "name": {
+        "value": "apara bala"
+       }
+      },
+      {
+       "id": "Elaenia_chiriquensis",
+       "name": {
+        "value": "chibum"
+       }
+      },
+      {
+       "id": "Colibri_serrirostris",
+       "name": {
+        "value": "beija flor de orelha violeta"
+       }
+      },
+      {
+       "id": "Cariama_cristata",
+       "name": {
+        "value": "seriema"
+       }
+      },
+      {
+       "id": "Coryphospingus_pileatus",
+       "name": {
+        "value": "cravina"
+       }
+      },
+      {
+       "id": "Cacicus_chrysopterus",
+       "name": {
+        "value": "cacique d asa dourada"
+       }
+      },
+      {
+       "id": "Donacobius_atricapilla",
+       "name": {
+        "value": "donacobio"
+       }
+      },
+      {
+       "id": "Gallus_gallus",
+       "name": {
+        "value": "galo banquiva"
+       }
+      },
+      {
+       "id": "Sirystes_sibilator",
+       "name": {
+        "value": "gritador"
+       }
+      },
+      {
+       "id": "Egretta_caerulea",
+       "name": {
+        "value": "garca azul"
+       }
+      },
+      {
+       "id": "Pardirallus_sanguinolentus",
+       "name": {
+        "value": "frango d agua plumbeo"
+       }
+      },
+      {
+       "id": "Thlypopsis_pyrrhocoma",
+       "name": {
+        "value": "cabecinha castanha"
+       }
+      },
+      {
+       "id": "Orthogonys_chloricterus",
+       "name": {
+        "value": "catirumbava"
+       }
+      },
+      {
+       "id": "Pardirallus_maculatus",
+       "name": {
+        "value": "saracura pedres"
+       }
+      },
+      {
+       "id": "Cochlearius_cochlearius",
+       "name": {
+        "value": "arapapa"
+       }
+      },
+      {
+       "id": "Hirundo_rustica",
+       "name": {
+        "value": "andorinha das chamines"
+       }
+      },
+      {
+       "id": "Taraba_major",
+       "name": {
+        "value": "choro boi"
+       }
+      },
+      {
+       "id": "Elaenia_sordida",
+       "name": {
+        "value": "elenia de cabeca pequena"
+       }
+      },
+      {
+       "id": "Coscoroba_coscoroba",
+       "name": {
+        "value": "capororoca"
+       }
+      },
+      {
+       "id": "Aratinga_auricapillus",
+       "name": {
+        "value": "jandaia de testa vermelha"
+       }
+      },
+      {
+       "id": "Chloroceryle_aenea",
+       "name": {
+        "value": "martim pescador anao"
+       }
+      },
+      {
+       "id": "Donacospiza_albifrons",
+       "name": {
+        "value": "tentilhao dos canicos"
+       }
+      },
+      {
+       "id": "Pteroglossus_bailloni",
+       "name": {
+        "value": "aracari banana"
+       }
+      },
+      {
+       "id": "Dendrocincla_fuliginosa",
+       "name": {
+        "value": "arapacu liso"
+       }
+      },
+      {
+       "id": "Thraupis_cyanoptera",
+       "name": {
+        "value": "sanhaco de encontro azul"
+       }
+      },
+      {
+       "id": "Setopagis_parvula",
+       "name": {
+        "value": "bacurau chinta"
+       }
+      },
+      {
+       "id": "Coccyzus_melacoryphus",
+       "name": {
+        "value": "cuco canela"
+       }
+      },
+      {
+       "id": "Myiothlypis_flaveola",
+       "name": {
+        "value": "canario do mato"
+       }
+      },
+      {
+       "id": "Harpagus_diodon",
+       "name": {
+        "value": "gaviao bombachinha"
+       }
+      },
+      {
+       "id": "Phyllomyias_griseocapilla",
+       "name": {
+        "value": "piolhinho serrano"
+       }
+      },
+      {
+       "id": "Cyanocorax_caeruleus",
+       "name": {
+        "value": "gaio celeste"
+       }
+      },
+      {
+       "id": "Plegadis_chihi",
+       "name": {
+        "value": "carauna de cara branca"
+       }
+      },
+      {
+       "id": "Oxyruncus_cristatus",
+       "name": {
+        "value": "araponga do horto"
+       }
+      },
+      {
+       "id": "Mackenziaena_leachii",
+       "name": {
+        "value": "borralhara assobiadora"
+       }
+      },
+      {
+       "id": "Xolmis_velatus",
+       "name": {
+        "value": "noivinha branca"
+       }
+      },
+      {
+       "id": "Campephilus_robustus",
+       "name": {
+        "value": "pica pau rei"
+       }
+      },
+      {
+       "id": "Ramphastos_vitellinus",
+       "name": {
+        "value": "tucano de bico preto"
+       }
+      },
+      {
+       "id": "Pulsatrix_koeniswaldiana",
+       "name": {
+        "value": "coruja de sobrancelhas amarelas"
+       }
+      },
+      {
+       "id": "Cathartes_burrovianus",
+       "name": {
+        "value": "urubu de cabeca amarela"
+       }
+      },
+      {
+       "id": "Calidris_fuscicollis",
+       "name": {
+        "value": "macarico de rabadilha branca"
+       }
+      },
+      {
+       "id": "Micrastur_ruficollis",
+       "name": {
+        "value": "falcao mateiro de peito ruivo"
+       }
+      },
+      {
+       "id": "Drymophila_malura",
+       "name": {
+        "value": "choquinha carijo"
+       }
+      },
+      {
+       "id": "Sporophila_bouvreuil",
+       "name": {
+        "value": "caboclinho de cabeca marrom"
+       }
+      },
+      {
+       "id": "Gubernetes_yetapa",
+       "name": {
+        "value": "caca moscas viuvinha"
+       }
+      },
+      {
+       "id": "Fulica_armillata",
+       "name": {
+        "value": "carqueja"
+       }
+      },
+      {
+       "id": "Cyanoloxia_glaucocaerulea",
+       "name": {
+        "value": "azulinho"
+       }
+      },
+      {
+       "id": "Podiceps_occipitalis",
+       "name": {
+        "value": "mergulhao de orelha amarela"
+       }
+      },
+      {
+       "id": "Chamaeza_campanisona",
+       "name": {
+        "value": "tordo formigueiro de cauda curta"
+       }
+      },
+      {
+       "id": "Callonetta_leucophrys",
+       "name": {
+        "value": "marreca de coleira"
+       }
+      },
+      {
+       "id": "Spatula_platalea",
+       "name": {
+        "value": "marreca colhereira"
+       }
+      },
+      {
+       "id": "Asemospiza_fuliginosa",
+       "name": {
+        "value": "cigarra do coqueiro"
+       }
+      },
+      {
+       "id": "Cyanoloxia_brissonii",
+       "name": {
+        "value": "azulao"
+       }
+      },
+      {
+       "id": "Myiarchus_tyrannulus",
+       "name": {
+        "value": "maria de asa ferrugum"
+       }
+      },
+      {
+       "id": "Circus_buffoni",
+       "name": {
+        "value": "gaviao do brejo"
+       }
+      },
+      {
+       "id": "Tangara_cyanocephala",
+       "name": {
+        "value": "saira lenco"
+       }
+      },
+      {
+       "id": "Heliobletus_contaminatus",
+       "name": {
+        "value": "corre ramos de bico fino"
+       }
+      },
+      {
+       "id": "Ilicura_militaris",
+       "name": {
+        "value": "manaquim militar"
+       }
+      },
+      {
+       "id": "Paroaria_capitata",
+       "name": {
+        "value": "cardeal do pantanal"
+       }
+      },
+      {
+       "id": "Sporophila_frontalis",
+       "name": {
+        "value": "pixoxo"
+       }
+      },
+      {
+       "id": "Anabacerthia_amaurotis",
+       "name": {
+        "value": "limpa folha miudo"
+       }
+      },
+      {
+       "id": "Synallaxis_cinerascens",
+       "name": {
+        "value": "pi pui"
+       }
+      },
+      {
+       "id": "Aramides_mangle",
+       "name": {
+        "value": "frango d agua pequeno"
+       }
+      },
+      {
+       "id": "Lepidocolaptes_squamatus",
+       "name": {
+        "value": "arapacu escamoso"
+       }
+      },
+      {
+       "id": "Columbina_squammata",
+       "name": {
+        "value": "fogo apagou"
+       }
+      },
+      {
+       "id": "Sporophila_albogularis",
+       "name": {
+        "value": "brejal"
+       }
+      },
+      {
+       "id": "Cyanocorax_cyanopogon",
+       "name": {
+        "value": "gaio de nuca branca"
+       }
+      },
+      {
+       "id": "Buteogallus_urubitinga",
+       "name": {
+        "value": "butio preto grande"
+       }
+      },
+      {
+       "id": "Geranospiza_caerulescens",
+       "name": {
+        "value": "butio pernilongo"
+       }
+      },
+      {
+       "id": "Chordeiles_nacunda",
+       "name": {
+        "value": "tion tion"
+       }
+      },
+      {
+       "id": "Calidris_himantopus",
+       "name": {
+        "value": "macarico pernilongo"
+       }
+      },
+      {
+       "id": "Knipolegus_lophotes",
+       "name": {
+        "value": "caca moscas preto de poupa"
+       }
+      },
+      {
+       "id": "Numida_meleagris",
+       "name": {
+        "value": "fraca"
+       }
+      },
+      {
+       "id": "Coryphospingus_cucullatus",
+       "name": {
+        "value": "tentilhao rei vermelho"
+       }
+      },
+      {
+       "id": "Saltator_fuliginosus",
+       "name": {
+        "value": "bico de pimenta"
+       }
+      },
+      {
+       "id": "Phleocryptes_melanops",
+       "name": {
+        "value": "bate bico"
+       }
+      },
+      {
+       "id": "Arremon_semitorquatus",
+       "name": {
+        "value": "tico tico de coleira interrompida"
+       }
+      },
+      {
+       "id": "Knipolegus_nigerrimus",
+       "name": {
+        "value": "caca moscas de veludo"
+       }
+      },
+      {
+       "id": "Sicalis_luteola",
+       "name": {
+        "value": "canario das pradarias"
+       }
+      },
+      {
+       "id": "Heliomaster_squamosus",
+       "name": {
+        "value": "bico reto de banda branca"
+       }
+      },
+      {
+       "id": "Geopelia_cuneata",
+       "name": {
+        "value": "pomba diamante"
+       }
+      },
+      {
+       "id": "Stilpnia_preciosa",
+       "name": {
+        "value": "saira preciosa"
+       }
+      },
+      {
+       "id": "Cnemotriccus_fuscatus",
+       "name": {
+        "value": "caca moscas fusco"
+       }
+      },
+      {
+       "id": "Coccyzus_euleri",
+       "name": {
+        "value": "cuco de barriga branca"
+       }
+      },
+      {
+       "id": "Sporophila_angolensis",
+       "name": {
+        "value": "curio"
+       }
+      },
+      {
+       "id": "Tityra_inquisitor",
+       "name": {
+        "value": "anambe branco de bochecha parda"
+       }
+      },
+      {
+       "id": "Myiozetetes_cayanensis",
+       "name": {
+        "value": "bem te vi assobiador"
+       }
+      },
+      {
+       "id": "Pseudocolopteryx_flaviventris",
+       "name": {
+        "value": "amarelinho do junco"
+       }
+      },
+      {
+       "id": "Hemitriccus_diops",
+       "name": {
+        "value": "maria de olho falso"
+       }
+      },
+      {
+       "id": "Hemitriccus_nidipendulus",
+       "name": {
+        "value": "falso todi de ninho suspenso"
+       }
+      },
+      {
+       "id": "Knipolegus_cyanirostris",
+       "name": {
+        "value": "caca moscas de bico celeste"
+       }
+      },
+      {
+       "id": "Lophornis_chalybeus",
+       "name": {
+        "value": "colibri de leque verde oriental"
+       }
+      },
+      {
+       "id": "Heliornis_fulica",
+       "name": {
+        "value": "ipequi"
+       }
+      },
+      {
+       "id": "Lepidocolaptes_falcinellus",
+       "name": {
+        "value": "arapacu escamado do sul"
+       }
+      },
+      {
+       "id": "Sporophila_ardesiaca",
+       "name": {
+        "value": "papa capim de costas cinza"
+       }
+      },
+      {
+       "id": "Pachyramphus_viridis",
+       "name": {
+        "value": "caneleiro de dorso verde"
+       }
+      },
+      {
+       "id": "Columbina_minuta",
+       "name": {
+        "value": "rolinha de asa canela"
+       }
+      },
+      {
+       "id": "Piranga_flava",
+       "name": {
+        "value": "sanhaco de fogo"
+       }
+      },
+      {
+       "id": "Geothlypis_aequinoctialis",
+       "name": {
+        "value": "pia cobra"
+       }
+      },
+      {
+       "id": "Sporophila_collaris",
+       "name": {
+        "value": "coleira do brejo"
+       }
+      },
+      {
+       "id": "Myiopsitta_monachus",
+       "name": {
+        "value": "caturrita"
+       }
+      },
+      {
+       "id": "Stilpnia_peruviana",
+       "name": {
+        "value": "saiguacu"
+       }
+      },
+      {
+       "id": "Clytolaema_rubricauda",
+       "name": {
+        "value": "clytolaema rubricauda"
+       }
+      },
+      {
+       "id": "Eleoscytalopus_indigoticus",
+       "name": {
+        "value": "macuquinho"
+       }
+      },
+      {
+       "id": "Phalaropus_tricolor",
+       "name": {
+        "value": "falaropo tricolor"
+       }
+      }
+     ]
+    }
+   ]
+  }
+ }
+}
