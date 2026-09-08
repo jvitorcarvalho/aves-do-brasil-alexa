@@ -7,7 +7,7 @@ Motor: parser de fala livre -> pontuacao bayesiana sobre 390 especies
 da regiao de Sao Paulo (GBIF >=20 registros), tracos AVONET (CC BY 4.0)
 e cores HBW (CC0). Audios xeno-canto CC BY-NC-SA - USO NAO COMERCIAL.
 """
-import json, os, re, math, unicodedata, logging
+import json, os, re, math, unicodedata, logging, random, datetime
 import ask_sdk_core.utils as ask_utils
 from ask_sdk_core.skill_builder import SkillBuilder
 from ask_sdk_core.dispatch_components import AbstractRequestHandler, AbstractExceptionHandler
@@ -21,9 +21,19 @@ _HERE = os.path.dirname(os.path.abspath(__file__))
 with open(os.path.join(_HERE, "aves.json"), encoding="utf-8") as _f:
     AVES = json.load(_f)
 
-# S3 com os MP3 ja convertidos p/ 48 kbps (ver converter_audio.sh).
-# Vazio => a skill nao toca audio, so descreve. Preencha apos subir os arquivos.
-AUDIO_BASE = os.environ.get("AUDIO_BASE_URL", "").rstrip("/")
+# Audio: Alexa-hosted usa pre-signed URLs para o bucket S3 privado.
+# Os MP3 ficam em Media/aves/<Especie_nome>.mp3 no bucket da skill.
+# O utils.py ja vem no template e expoe create_presigned_url().
+try:
+    from utils import create_presigned_url
+    _HAS_S3 = True
+except ImportError:
+    _HAS_S3 = False
+    def create_presigned_url(s3_path):
+        return None
+
+# Mes atual (cache no nivel do modulo - ok para Lambda, reinicia periodicamente)
+_MES_ATUAL = datetime.datetime.now().month
 
 # ---------------------------------------------------------------- parser
 def _norm(s):
@@ -103,6 +113,10 @@ def ranquear(frase, k=3):
         if "tam"   in a: s += m["s"][a["tam"][0]]
         if "bico"  in a: s += m["b"][a["bico"][0]]
         if "cauda" in a: s += m["t"][a["cauda"][0]]
+        # Feature 3: bonus de sazonalidade
+        if m.get("meses"):
+            saz = m["meses"][_MES_ATUAL - 1]
+            s += 0.4 * math.log(saz / 0.083 + 0.01)
         res.append((s, m))
     res.sort(key=lambda x: -x[0])
     mx = res[0][0]
@@ -147,10 +161,13 @@ def buscar_especie(nome):
 
 # ---------------------------------------------------------------- fala
 def _audio_ssml(m):
-    """<audio> exige MP3 HTTPS 48 kbps, 16/22.05/24 kHz, <=240 s."""
-    if not m.get("a") or not AUDIO_BASE:
+    """Gera tag <audio> com pre-signed URL do S3 da skill."""
+    if not m.get("a") or not _HAS_S3:
         return None, None
-    url = "{}/{}.mp3".format(AUDIO_BASE, m["sci"].replace(" ", "_"))
+    s3_path = "Media/aves/{}.mp3".format(m["sci"].replace(" ", "_"))
+    url = create_presigned_url(s3_path)
+    if not url:
+        return None, None
     a = m["a"]
     cred = "Gravação de {}, xeno canto {}.".format(a.get("aut") or "autor não informado", a.get("xc") or "")
     return '<audio src="{}"/>'.format(url), cred
@@ -172,6 +189,39 @@ FALTA = {"cor": "de que cor ela era",
 
 AVISO_PLAYBACK = ("Uma dica: evite repetir gravações no campo. "
                   "O som atrai as aves e atrapalha o território e a reprodução delas.")
+
+# ---------------------------------------------------------------- aves de hoje (Feature 1)
+def _aves_de_hoje():
+    """Top 5 espécies mais prováveis para o mês atual, usando sazonalidade × abundância."""
+    mes_idx = _MES_ATUAL - 1
+    scored = []
+    for m in AVES:
+        if not m.get("meses"):
+            continue
+        saz = m["meses"][mes_idx]
+        # score = sazonalidade * log(abundância)
+        if m["n"] > 0:
+            scored.append((saz * math.log(m["n"]), saz, m))
+    scored.sort(key=lambda x: -x[0])
+    top5 = scored[:5]
+
+    # Detectar novidades sazonais: espécies onde o mês atual é top-3 para a espécie
+    # E o mês anterior era significativamente menor (ratio > 2x)
+    novidades = []
+    mes_ant_idx = (mes_idx - 1) % 12
+    for _, saz, m in scored[:20]:  # buscar entre top 20
+        meses = m["meses"]
+        sorted_meses = sorted(meses, reverse=True)
+        if saz >= sorted_meses[2] if len(sorted_meses) >= 3 else True:
+            anterior = meses[mes_ant_idx]
+            if anterior > 0 and saz / anterior > 2.0:
+                novidades.append(m)
+            elif anterior == 0 and saz > 0.05:
+                novidades.append(m)
+        if len(novidades) >= 2:
+            break
+
+    return top5, novidades
 
 # ---------------------------------------------------------------- handlers
 class LaunchRequestHandler(AbstractRequestHandler):
@@ -222,7 +272,7 @@ class DescreverAveHandler(AbstractRequestHandler):
                 fala += "Para melhorar o palpite, me diga {}.".format(FALTA[faltando[0]])
                 return handler_input.response_builder.speak(fala).ask("Consegue me dizer?").response
 
-        if m1.get("a") and AUDIO_BASE:
+        if m1.get("a") and _HAS_S3:
             fala += "Quer ouvir o {} dele?".format(m1["a"].get("tp") or "canto")
             return handler_input.response_builder.speak(fala).ask("Quer ouvir?").response
         fala += "Quer descrever outra ave?"
@@ -309,6 +359,130 @@ class MaisDetalhesHandler(AbstractRequestHandler):
         fala = " ".join(descrever(m) for m in ms) + " Quer ouvir o canto de alguma?"
         return handler_input.response_builder.speak(fala).ask("Quer ouvir o canto de alguma?").response
 
+# ---------------------------------------------------------------- Feature 1: Aves de Hoje
+class AvesDeHojeHandler(AbstractRequestHandler):
+    def can_handle(self, handler_input):
+        return ask_utils.is_intent_name("AvesDeHojeIntent")(handler_input)
+    def handle(self, handler_input):
+        top5, novidades = _aves_de_hoje()
+        if not top5:
+            return handler_input.response_builder.speak(
+                "Não tenho dados de sazonalidade suficientes. Quer identificar uma ave?"
+            ).ask("Descreva a ave que você viu.").response
+
+        nomes = [item[2]["pt"] for item in top5]
+        if len(nomes) >= 5:
+            lista = ", ".join(nomes[:4]) + " e " + nomes[4]
+        else:
+            lista = ", ".join(nomes[:-1]) + " e " + nomes[-1] if len(nomes) > 1 else nomes[0]
+
+        fala = "Neste mês, as aves mais comuns por aqui são: {}. Quer que eu descreva alguma?".format(lista)
+
+        if novidades:
+            nov = novidades[0]
+            fala += " E uma novidade: o {} costuma aparecer nessa época!".format(nov["pt"])
+
+        # Guardar a primeira como última para permitir follow-up
+        attrs = handler_input.attributes_manager.session_attributes
+        attrs["ultima"] = top5[0][2]["sci"]
+        attrs["cands"] = [item[2]["sci"] for item in top5[:3]]
+
+        return handler_input.response_builder.speak(fala).ask("Quer que eu descreva alguma?").response
+
+# ---------------------------------------------------------------- Feature 2: Quiz de Cantos
+class QuizHandler(AbstractRequestHandler):
+    def can_handle(self, handler_input):
+        return ask_utils.is_intent_name("QuizIntent")(handler_input)
+    def handle(self, handler_input):
+        if not _HAS_S3:
+            return handler_input.response_builder.speak(
+                "O quiz de cantos ainda não está disponível. Quer identificar uma ave?"
+            ).ask("Descreva a ave que você viu.").response
+
+        # Filtrar espécies com audio e razoavelmente comuns
+        candidatos = [m for m in AVES if m.get("a") and m["n"] >= 1000]
+        if not candidatos:
+            return handler_input.response_builder.speak(
+                "Não encontrei espécies suficientes para o quiz. Quer identificar uma ave?"
+            ).ask("Descreva a ave que você viu.").response
+
+        escolhida = random.choice(candidatos)
+        ssml_audio, cred = _audio_ssml(escolhida)
+
+        attrs = handler_input.attributes_manager.session_attributes
+        attrs["quiz_resposta"] = escolhida["sci"]
+        attrs["quiz_acertos"] = attrs.get("quiz_acertos", 0)
+        attrs["quiz_total"] = attrs.get("quiz_total", 0)
+
+        fala = "Escute esse canto. {} De que ave é esse canto? Diga o nome.".format(ssml_audio)
+        return handler_input.response_builder.speak(fala).ask("De que ave é esse canto?").response
+
+class QuizRespostaHandler(AbstractRequestHandler):
+    def can_handle(self, handler_input):
+        if not ask_utils.is_intent_name("QuizRespostaIntent")(handler_input):
+            return False
+        attrs = handler_input.attributes_manager.session_attributes
+        return bool(attrs.get("quiz_resposta"))
+    def handle(self, handler_input):
+        attrs = handler_input.attributes_manager.session_attributes
+        sci_certo = attrs.get("quiz_resposta", "")
+        m_certo = next((x for x in AVES if x["sci"] == sci_certo), None)
+
+        slots = handler_input.request_envelope.request.intent.slots or {}
+        slot = slots.get("resposta")
+        nome_resp = (slot.value if slot else "") or ""
+
+        # Tentar resolver pelo slot ou busca textual
+        m_resp = None
+        if slot is not None:
+            sid = _id_resolvido(slot)
+            if sid:
+                sci = sid.replace("_", " ")
+                m_resp = next((x for x in AVES if x["sci"] == sci), None)
+        if m_resp is None:
+            m_resp = buscar_especie(nome_resp)
+
+        attrs["quiz_total"] = attrs.get("quiz_total", 0) + 1
+        acertou = m_resp is not None and m_certo is not None and m_resp["sci"] == m_certo["sci"]
+
+        if acertou:
+            attrs["quiz_acertos"] = attrs.get("quiz_acertos", 0) + 1
+            desc = descrever(m_certo) if m_certo else ""
+            fala = "Isso! É o {}! {} Quer tentar outro?".format(m_certo["pt"], desc)
+        else:
+            nome_certo = m_certo["pt"] if m_certo else "uma ave desconhecida"
+            desc = descrever(m_certo) if m_certo else ""
+            fala = "Não era não. Esse é o canto do {}. {} Quer tentar outro?".format(nome_certo, desc)
+
+        # Limpar a resposta do quiz para permitir novo round ou sair
+        attrs.pop("quiz_resposta", None)
+
+        return handler_input.response_builder.speak(fala).ask("Quer tentar outro?").response
+
+class QuizRespostaFallbackHandler(AbstractRequestHandler):
+    """Handles QuizRespostaIntent when no quiz is active — treat as species lookup."""
+    def can_handle(self, handler_input):
+        return ask_utils.is_intent_name("QuizRespostaIntent")(handler_input)
+    def handle(self, handler_input):
+        slots = handler_input.request_envelope.request.intent.slots or {}
+        slot = slots.get("resposta")
+        nome = (slot.value if slot else "") or ""
+        m = None
+        if slot is not None:
+            sid = _id_resolvido(slot)
+            if sid:
+                sci = sid.replace("_", " ")
+                m = next((x for x in AVES if x["sci"] == sci), None)
+        if m is None:
+            m = buscar_especie(nome)
+        if not m:
+            return handler_input.response_builder.speak(
+                "Não tem nenhum quiz ativo. Quer começar um? Diga: quiz de cantos."
+            ).ask("Quer jogar o quiz de cantos?").response
+        handler_input.attributes_manager.session_attributes["ultima"] = m["sci"]
+        fala = "Sobre o {}: {} Quer saber mais ou ouvir o canto?".format(m["pt"], descrever(m))
+        return handler_input.response_builder.speak(fala).ask("Quer ouvir o canto?").response
+
 class HelpHandler(AbstractRequestHandler):
     def can_handle(self, handler_input):
         return ask_utils.is_intent_name("AMAZON.HelpIntent")(handler_input)
@@ -316,6 +490,8 @@ class HelpHandler(AbstractRequestHandler):
         fala = ("Eu ajudo a identificar aves pela descrição. Diga por exemplo: "
                 "vi uma ave parda com peito amarelo do tamanho de um sabiá no quintal. "
                 "Você também pode pedir: qual é o canto do bem-te-vi. "
+                "Ou diga: que aves posso ver hoje, para saber as aves do mês. "
+                "E se quiser testar seus conhecimentos, diga: quiz de cantos. "
                 "Eu conheço 390 espécies da região de São Paulo.")
         return handler_input.response_builder.speak(fala).ask("Como era a ave que você viu?").response
 
@@ -325,7 +501,14 @@ class CancelStopHandler(AbstractRequestHandler):
                 or ask_utils.is_intent_name("AMAZON.StopIntent")(handler_input)
                 or ask_utils.is_intent_name("AMAZON.NoIntent")(handler_input))
     def handle(self, handler_input):
-        return handler_input.response_builder.speak("Até a próxima. Bons passarinhos!").set_should_end_session(True).response
+        attrs = handler_input.attributes_manager.session_attributes
+        acertos = attrs.get("quiz_acertos", 0)
+        total = attrs.get("quiz_total", 0)
+        if total > 0:
+            fala = "Você acertou {} de {}. Bons passarinhos!".format(acertos, total)
+        else:
+            fala = "Até a próxima. Bons passarinhos!"
+        return handler_input.response_builder.speak(fala).set_should_end_session(True).response
 
 class FallbackHandler(AbstractRequestHandler):
     def can_handle(self, handler_input):
@@ -353,6 +536,10 @@ class CatchAllExceptionHandler(AbstractExceptionHandler):
 sb = SkillBuilder()
 sb.add_request_handler(LaunchRequestHandler())
 sb.add_request_handler(DescreverAveHandler())
+sb.add_request_handler(AvesDeHojeHandler())
+sb.add_request_handler(QuizHandler())
+sb.add_request_handler(QuizRespostaHandler())  # Before SomDaAve — takes priority when quiz active
+sb.add_request_handler(QuizRespostaFallbackHandler())  # When no quiz, treat as species lookup
 sb.add_request_handler(SomDaAveHandler())
 sb.add_request_handler(OuvirHandler())
 sb.add_request_handler(MaisDetalhesHandler())
