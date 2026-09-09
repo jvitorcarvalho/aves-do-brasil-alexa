@@ -176,9 +176,22 @@ def buscar_especie(nome):
     exatos = [m for m in AVES if n in _chaves(m)]
     if exatos:
         return max(exatos, key=lambda m: m["n"])
-    contem = [m for m in AVES if any(n in k or k in n for k in _chaves(m))]
+    # Contains match: score by length of matching key (longer = more specific = better)
+    contem = []
+    for m in AVES:
+        best_score = 0
+        for k in _chaves(m):
+            if n in k:
+                # query is substring of key — good (e.g. 'urutau' in 'urutau comum')
+                best_score = max(best_score, len(n) * 2)
+            elif k in n and len(k) > 3:
+                # key is substring of query — only if key is long enough
+                best_score = max(best_score, len(k))
+        if best_score > 0:
+            contem.append((best_score, m))
     if contem:
-        return max(contem, key=lambda m: m["n"])
+        contem.sort(key=lambda x: (-x[0], -x[1]["n"]))
+        return contem[0][1]
     tokens = [x for x in n.split(" ") if len(x) > 3]
     if tokens:
         cand = [m for m in AVES if any(all(tk in k for tk in tokens) for k in _chaves(m))]
@@ -201,36 +214,118 @@ def _audio_ssml(m):
     cred = "Gravação de {}.".format(a.get("aut") or "autor não informado")
     return '<audio src="{}"/>'.format(url), cred
 
+def _porte(g):
+    """Classifica porte pela massa em gramas."""
+    if g < 15:
+        return "bem pequena"
+    if g < 40:
+        return "pequena"
+    if g < 100:
+        return "de porte médio"
+    if g < 500:
+        return "de porte médio a grande"
+    if g < 2000:
+        return "grande"
+    return "bem grande"
+
+def _dieta_natural(d):
+    """Torna a dieta mais natural para fala."""
+    if not d:
+        return ""
+    mapa = {
+        "onivoro": "de tudo um pouco",
+        "onívoro": "de tudo um pouco",
+        "insetos": "principalmente insetos",
+        "frutas": "principalmente frutas",
+        "sementes": "principalmente sementes",
+        "peixes": "principalmente peixes",
+        "vegetais": "principalmente vegetais",
+        "nectar": "néctar de flores",
+        "néctar": "néctar de flores",
+        "carniceiro": "carniça",
+        "carnivoro": "pequenos animais",
+        "carnívoro": "pequenos animais",
+    }
+    dl = d.lower().strip()
+    return mapa.get(dl, d)
+
 def descrever(m):
     nome = _nome_fala(m)
-    p = ["{}, {}".format(nome, m["tom"])]
-    if m.get("viva") and str(m["viva"]) not in ("None", "nan", "null", ""):
-        p.append("com {}".format(m["viva"]))
-    p.append("pesa cerca de {} gramas".format(int(m["g"])))
-    p.append("vive em {}".format(m["amb"]))
-    if m.get("dieta"):
-        p.append("come {}".format(m["dieta"]))
-    return ", ".join(p) + "."
+    g = int(m["g"])
+    tom = m["tom"]
+    viva = m.get("viva", "")
+    if str(viva) in ("None", "nan", "null", ""):
+        viva = ""
+    amb = m["amb"]
+    dieta = _dieta_natural(m.get("dieta", ""))
+    variante = random.randint(0, 2)
+    if variante == 0:
+        txt = "O {} é uma ave {}".format(nome, tom)
+        if viva:
+            txt += ", com {}".format(viva)
+        txt += ". <break time='300ms'/>"
+        txt += "Pesa cerca de {} gramas e costuma viver em {}.".format(g, amb)
+        if dieta:
+            txt += " <break time='200ms'/>Se alimenta {}.".format(dieta)
+    elif variante == 1:
+        txt = "{}, uma ave {}".format(nome, tom)
+        if viva:
+            txt += " com {}".format(viva)
+        txt += ", que pesa por volta de {} gramas.".format(g)
+        txt += " <break time='300ms'/>Costuma frequentar {}.".format(amb)
+        if dieta:
+            txt += " Come {}.".format(dieta)
+    else:
+        txt = "Esse é o {}, ave {}".format(nome, tom)
+        if viva:
+            txt += " com detalhes em {}".format(viva)
+        txt += ". <break time='300ms'/>"
+        txt += "Com cerca de {} gramas, vive em {}.".format(g, amb)
+        if dieta:
+            txt += " <break time='200ms'/>Sua dieta inclui {}.".format(dieta)
+    return txt
 
 def _info_especie(m):
     """Retorna texto detalhado sobre a espécie para o InfoAveIntent."""
     nome = _nome_fala(m)
-    partes = ["O {}, nome científico {}, família {}".format(nome, m["sci"], m.get("fam", "não informada"))]
-    partes.append("pesa cerca de {} gramas".format(int(m["g"])))
-    partes.append("vive em {}".format(m["amb"]))
-    if m.get("dieta"):
-        partes.append("come {}".format(m["dieta"]))
+    sci = m["sci"]
+    fam = m.get("fam", "não informada")
+    g = int(m["g"])
+    porte = _porte(g)
+    amb = m["amb"]
+    dieta = _dieta_natural(m.get("dieta", ""))
+    variante = random.randint(0, 2)
+    if variante == 0:
+        txt = "O {}, cujo nome científico é {}, pertence à família {}.".format(nome, sci, fam)
+        txt += " <break time='300ms'/>É uma ave {}, pesando cerca de {} gramas.".format(porte, g)
+        txt += " <break time='300ms'/>Costuma frequentar {}.".format(amb)
+        if dieta:
+            txt += " Tem uma dieta variada, comendo {}.".format(dieta)
+    elif variante == 1:
+        txt = "Vamos falar do {}. <break time='200ms'/>".format(nome)
+        txt += "Cientificamente conhecido como {}, da família {}.".format(sci, fam)
+        txt += " <break time='300ms'/>É uma ave {}, com cerca de {} gramas.".format(porte, g)
+        txt += " Vive em {}.".format(amb)
+        if dieta:
+            txt += " <break time='200ms'/>Na alimentação, come {}.".format(dieta)
+    else:
+        txt = "O {} é da família {}, ".format(nome, fam)
+        txt += "e seu nome científico é {}. <break time='300ms'/>".format(sci)
+        txt += "É uma ave {}, pesando por volta de {} gramas, ".format(porte, g)
+        txt += "e gosta de ambientes como {}.".format(amb)
+        if dieta:
+            txt += " <break time='200ms'/>Se alimenta {}.".format(dieta)
     # Sazonalidade
     if m.get("meses"):
         saz = m["meses"][_MES_ATUAL - 1]
         media = sum(m["meses"]) / 12
         if media > 0 and saz / media > 1.3:
-            partes.append("É mais comum nessa época do ano")
+            txt += " <break time='300ms'/>É mais comum nessa época do ano."
         elif media > 0 and saz / media < 0.5:
-            partes.append("É menos comum nessa época do ano")
+            txt += " <break time='300ms'/>É menos comum nessa época do ano."
         else:
-            partes.append("É comum o ano todo por aqui")
-    return ", ".join(partes) + "."
+            txt += " <break time='300ms'/>É comum o ano todo por aqui."
+    return txt
 
 FALTA = {"cor": "de que cor ela era",
          "tam": "qual era mais ou menos o tamanho",
