@@ -209,8 +209,13 @@ def _audio_ssml(m):
         logger.info("_audio_ssml: no audio metadata or no S3. a=%s _HAS_S3=%s", m.get("a"), _HAS_S3)
         return None, None
     s3_path = "Media/aves/{}.mp3".format(m["sci"].replace(" ", "_"))
+    logger.info("_audio_ssml: attempting presigned URL for %s (bucket=%s, region=%s)",
+                s3_path,
+                os.environ.get('S3_PERSISTENCE_BUCKET', '<NOT SET>'),
+                os.environ.get('S3_PERSISTENCE_REGION', '<NOT SET>'))
     try:
         url = create_presigned_url(s3_path)
+        logger.info("_audio_ssml: got URL=%s", str(url)[:100] if url else "None")
     except Exception as e:
         logger.error("_audio_ssml: create_presigned_url failed for %s: %s", s3_path, e)
         return None, None
@@ -678,6 +683,16 @@ def _handle_som(handler_input, texto):
     handler_input.attributes_manager.session_attributes["ultima"] = m["sci"]
     nome_fala = _nome_fala(m)
     ssml, cred = _audio_ssml(m)
+    # DEBUG: include diagnostic info in session attributes
+    debug_info = {
+        "has_a": bool(m.get("a")),
+        "_HAS_S3": _HAS_S3,
+        "bucket": os.environ.get("S3_PERSISTENCE_BUCKET", "<NOT SET>"),
+        "region": os.environ.get("S3_PERSISTENCE_REGION", "<NOT SET>"),
+        "s3_path": "Media/aves/{}.mp3".format(m["sci"].replace(" ", "_")),
+        "ssml_result": ssml[:50] if ssml else "None",
+    }
+    handler_input.attributes_manager.session_attributes["_debug"] = debug_info
     if not ssml:
         return handler_input.response_builder.speak(
             "Ainda não tenho a gravação do {}. Mas posso te contar sobre ela: {} "
