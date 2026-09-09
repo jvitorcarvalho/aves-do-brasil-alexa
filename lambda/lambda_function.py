@@ -398,6 +398,11 @@ def _classificar_intencao(texto):
            'automatizar meu negocio', 'falar com a evolutiva', 'entre em contato']):
         return 'CONTATO'
 
+    # PERMISSAO/LOCALIZACAO — must be before QUIZ to prevent false match
+    if any(p in t for p in ['acesso', 'localizacao', 'permissao', 'autorizo', 'autorizar',
+           'permitir', 'habilitar', 'configuracoes', 'dou acesso']):
+        return 'PERMISSAO'
+
     # QUIZ
     if any(p in t for p in ['quiz', 'adivinhar canto', 'jogar', 'teste meus conhecimentos',
            'acertar o canto', 'brincar de adivinhar', 'vamos jogar']):
@@ -411,6 +416,13 @@ def _classificar_intencao(texto):
            'passaros tem hoje', 'aves dessa epoca', 'aves comuns agora', 'aves migrantes',
            'aves novas', 'chegaram aves', 'ave nova', 'aves aparecem', 'aves posso']):
         return 'HOJE'
+
+    # CURIOSIDADE — superlatives and general knowledge
+    if any(p in t for p in ['maior ave', 'menor ave', 'mais pesada', 'mais leve',
+           'mais colorida', 'mais rapida', 'mais comum', 'mais rara',
+           'quantas especies', 'quantas aves', 'qual a mais', 'qual o mais',
+           'a mais', 'o mais']):
+        return 'CURIOSIDADE'
 
     # SOM/CANTO (must check before DESCREVER because 'canto do X' has bird-like words)
     if any(p in t for p in ['canto do', 'canto da', 'som do', 'som da', 'toca o canto',
