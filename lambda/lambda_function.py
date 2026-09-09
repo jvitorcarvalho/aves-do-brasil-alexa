@@ -788,6 +788,73 @@ def _handle_nao_sei(handler_input):
     ).ask("O que você quer fazer?").response
 
 
+def _handle_permissao(handler_input):
+    """Logica de quando o usuário fala sobre permissão/localização."""
+    fala = ("Para autorizar o acesso à localização, abra o aplicativo Alexa no celular, "
+            "vá em Mais, depois Configurações, selecione esta skill e ative a permissão "
+            "de CEP e país. Assim posso dar exemplos de aves da sua região. "
+            "Enquanto isso, quer descrever uma ave ou ouvir um canto?")
+    return handler_input.response_builder.speak(fala).ask(
+        "Quer descrever uma ave?").response
+
+
+def _handle_curiosidade(handler_input, texto):
+    """Logica de curiosidades: maior, menor, mais pesada, etc."""
+    t = _norm(texto)
+    attrs = handler_input.attributes_manager.session_attributes
+
+    if 'menor' in t or 'mais leve' in t:
+        # Menor ave por peso
+        validas = [a for a in AVES if a.get("g") and a["g"] > 0]
+        validas.sort(key=lambda a: a["g"])
+        m = validas[0] if validas else None
+        if m:
+            attrs["ultima"] = m["sci"]
+            fala = ("A menor ave do Brasil que eu conheço é o {}, com apenas {:.0f} gramas. "
+                    "{} Quer saber mais ou ouvir o canto?").format(
+                _nome_fala(m), m["g"], descrever(m))
+        else:
+            fala = "Não tenho dados suficientes para responder. Quer descrever uma ave?"
+        return handler_input.response_builder.speak(fala).ask("Quer ouvir o canto?").response
+
+    if 'maior' in t or 'mais pesada' in t:
+        validas = [a for a in AVES if a.get("g") and a["g"] > 0]
+        validas.sort(key=lambda a: -a["g"])
+        m = validas[0] if validas else None
+        if m:
+            attrs["ultima"] = m["sci"]
+            fala = ("A maior ave do Brasil que eu conheço é o {}, com impressionantes {:.0f} gramas. "
+                    "{} Quer saber mais ou ouvir o canto?").format(
+                _nome_fala(m), m["g"], descrever(m))
+        else:
+            fala = "Não tenho dados suficientes para responder. Quer descrever uma ave?"
+        return handler_input.response_builder.speak(fala).ask("Quer ouvir o canto?").response
+
+    if 'mais comum' in t:
+        validas = [a for a in AVES if a.get("n") and a["n"] > 0]
+        validas.sort(key=lambda a: -a["n"])
+        m = validas[0] if validas else None
+        if m:
+            attrs["ultima"] = m["sci"]
+            fala = ("A ave mais registrada na minha base é o {}, com {} registros no GBIF. "
+                    "{} Quer saber mais?").format(_nome_fala(m), m["n"], descrever(m))
+        else:
+            fala = "Não tenho dados suficientes. Quer descrever uma ave?"
+        return handler_input.response_builder.speak(fala).ask("Quer saber mais?").response
+
+    if 'quantas' in t:
+        fala = ("Eu conheço {} espécies de aves do Brasil. "
+                "Quer identificar alguma? Descreva a ave que você viu.").format(len(AVES))
+        return handler_input.response_builder.speak(fala).ask(
+            "Descreva a ave que você viu.").response
+
+    # Fallback curiosidade genérica
+    fala = ("Posso te dizer qual é a maior ou menor ave do Brasil, "
+            "a mais comum, ou quantas espécies eu conheço. O que você quer saber?")
+    return handler_input.response_builder.speak(fala).ask(
+        "Quer saber a maior, a menor ou a mais comum?").response
+
+
 def _handle_info(handler_input, texto):
     """Logica de informação sobre uma espécie nomeada."""
     nome = _extrair_nome_especie(texto, 'INFO')
@@ -884,18 +951,51 @@ class CatchAllHandler(AbstractRequestHandler):
         intencao = _classificar_intencao(texto)
         logger.info("CatchAll texto=%s intencao=%s", texto, intencao)
 
+        # Context-aware: if desc_parcial is active and the utterance looks like a
+        # short answer (few words, no clear other intent), treat it as additional
+        # description to merge with the partial description from the previous turn.
+        attrs = handler_input.attributes_manager.session_attributes
+        if (attrs.get("desc_parcial") and intencao == 'DESCREVER'
+                and len(texto.split()) <= 5):
+            # Short answer like "no chão", "verde", "pequena" — merge with previous
+            logger.info("Short follow-up answer, merging with desc_parcial")
+            return _handle_descrever(handler_input, texto)
+
+        # Also: follow-up about the last bird mentioned (use session attribute "ultima")
+        if attrs.get("ultima") and intencao in ('DESCREVER', 'INFO'):
+            t = _norm(texto)
+            # Check if asking about the last bird: "nome científico?", "quanto pesa?"
+            follow_up_patterns = ['nome cientifico', 'quanto pesa', 'onde vive',
+                                  'o que come', 'qual a familia', 'qual familia',
+                                  'qual o peso', 'qual o tamanho']
+            if any(p in t for p in follow_up_patterns):
+                # Only if the text does NOT contain a species name (short question)
+                nome_check = _extrair_nome_especie(texto, intencao)
+                m_check = buscar_especie(nome_check) if nome_check != texto else None
+                if not m_check:
+                    sci = attrs["ultima"]
+                    m = next((x for x in AVES if x["sci"] == sci), None)
+                    if m:
+                        fala = _info_especie(m) + " Quer ouvir o canto?"
+                        return handler_input.response_builder.speak(fala).ask(
+                            "Quer ouvir o canto?").response
+
         if intencao == 'SOBRE':
             return _handle_sobre(handler_input)
         elif intencao == 'FONTES':
             return _handle_fontes(handler_input)
         elif intencao == 'CONTATO':
             return _handle_contato(handler_input)
+        elif intencao == 'PERMISSAO':
+            return _handle_permissao(handler_input)
         elif intencao == 'QUIZ':
             return _handle_quiz(handler_input)
         elif intencao == 'NAO_SEI':
             return _handle_nao_sei(handler_input)
         elif intencao == 'HOJE':
             return _handle_hoje(handler_input)
+        elif intencao == 'CURIOSIDADE':
+            return _handle_curiosidade(handler_input, texto)
         elif intencao == 'SOM':
             return _handle_som(handler_input, texto)
         elif intencao == 'OUVIR':
@@ -1017,7 +1117,7 @@ class HelpHandler(AbstractRequestHandler):
                 "Para saber sobre uma espécie, diga: me fala sobre o tucano. "
                 "E para saber quem criou esta skill ou de onde vêm os cantos, "
                 "diga: quem criou esta skill. "
-                "Eu conheço 390 espécies da região de São Paulo.")
+                "Eu conheço mais de 1.600 espécies de aves do Brasil.")
         return handler_input.response_builder.speak(fala).ask("Como era a ave que você viu?").response
 
 class CancelStopHandler(AbstractRequestHandler):
@@ -1043,11 +1143,15 @@ class FallbackHandler(AbstractRequestHandler):
     def handle(self, handler_input):
         attrs = handler_input.attributes_manager.session_attributes
 
-        # Context: mid-description follow-up
+        # Context: mid-description follow-up — try to parse the short answer as attributes
         if attrs.get("desc_parcial"):
-            fala = ("Não entendi a resposta. Tente descrever a ave novamente com mais "
-                    "detalhes numa frase só. Por exemplo: era uma ave pequena preta no "
-                    "chão da lagoa.")
+            # The user might have said a short answer like "no chão", "verde", "pequena"
+            # Try to extract attributes from whatever the Alexa captured
+            # Since FallbackIntent has no slots, we attempt to use the raw input
+            # Unfortunately FallbackIntent doesn't carry the text, so guide the user
+            fala = ("Tente responder numa frase completa incluindo a descrição. "
+                    "Por exemplo: era uma ave pequena preta no chão da lagoa. "
+                    "Ou diga: começar de novo.")
             return handler_input.response_builder.speak(fala).ask(
                 "Como era a ave?").response
 
