@@ -36,6 +36,7 @@ if not AVES:
 # Audio: Alexa-hosted usa pre-signed URLs para o bucket S3 privado.
 # Os MP3 ficam em Media/aves/<Especie_nome>.mp3 no bucket da skill.
 # O utils.py ja vem no template e expoe create_presigned_url().
+_S3_IMPORT_ERROR = ""
 try:
     from utils import create_presigned_url
     _HAS_S3 = True
@@ -44,6 +45,7 @@ try:
                 os.environ.get('S3_PERSISTENCE_REGION', '<NOT SET>'))
 except Exception as _s3_err:
     _HAS_S3 = False
+    _S3_IMPORT_ERROR = str(_s3_err)
     logger.error("Failed to import utils/create_presigned_url: %s", _s3_err)
     def create_presigned_url(s3_path):
         return None
@@ -692,7 +694,7 @@ def _handle_som(handler_input, texto):
         "region": os.environ.get("S3_PERSISTENCE_REGION", "<NOT SET>"),
         "s3_path": "Media/aves/{}.mp3".format(m["sci"].replace(" ", "_")),
         "ssml_result": ssml[:50] if ssml else "None",
-        "s3_import_err": str(globals().get("_s3_err", "none")),
+        "s3_import_err": _S3_IMPORT_ERROR or "none",
     }
     handler_input.attributes_manager.session_attributes["_debug"] = debug_info
     if not ssml:
