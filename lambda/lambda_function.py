@@ -39,6 +39,9 @@ if not AVES:
 try:
     from utils import create_presigned_url
     _HAS_S3 = True
+    logger.info("S3 config: BUCKET=%s REGION=%s",
+                os.environ.get('S3_PERSISTENCE_BUCKET', '<NOT SET>'),
+                os.environ.get('S3_PERSISTENCE_REGION', '<NOT SET>'))
 except ImportError:
     _HAS_S3 = False
     def create_presigned_url(s3_path):
@@ -203,10 +206,16 @@ def buscar_especie(nome):
 def _audio_ssml(m):
     """Gera tag <audio> com pre-signed URL do S3 da skill."""
     if not m.get("a") or not _HAS_S3:
+        logger.info("_audio_ssml: no audio metadata or no S3. a=%s _HAS_S3=%s", m.get("a"), _HAS_S3)
         return None, None
     s3_path = "Media/aves/{}.mp3".format(m["sci"].replace(" ", "_"))
-    url = create_presigned_url(s3_path)
+    try:
+        url = create_presigned_url(s3_path)
+    except Exception as e:
+        logger.error("_audio_ssml: create_presigned_url failed for %s: %s", s3_path, e)
+        return None, None
     if not url:
+        logger.info("_audio_ssml: presigned URL is None for %s", s3_path)
         return None, None
     # SSML e XML: & na URL precisa virar &amp;
     url = url.replace("&", "&amp;")
