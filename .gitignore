@@ -1,3 +1,26 @@
-lambda/node_modules
+# ASK CLI config (contains skill ID, deployer type)
 .ask/
 ask-resources.json
+
+# Skill manifest (contains Lambda ARNs with AWS account ID)
+skill-package/skill.json
+
+# Python
+lambda/__pycache__/
+lambda/*.pyc
+*.pyc
+__pycache__/
+
+# Audio files (122MB, download from xeno-canto — see README)
+Media/aves/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Node
+node_modules/
+
+# IDE
+.vscode/
+.idea/
