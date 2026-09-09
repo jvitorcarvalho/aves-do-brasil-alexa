@@ -12,10 +12,9 @@ roteamento interno no Lambda por classificacao de texto.
 """
 import json, os, re, math, unicodedata, logging, random, datetime
 import ask_sdk_core.utils as ask_utils
-from ask_sdk_core.skill_builder import CustomSkillBuilder
+from ask_sdk_core.skill_builder import SkillBuilder
 from ask_sdk_core.dispatch_components import AbstractRequestHandler, AbstractExceptionHandler
 from ask_sdk_core.handler_input import HandlerInput
-from ask_sdk_core.api_client import DefaultApiClient
 from ask_sdk_model import Response
 
 logger = logging.getLogger(__name__)
@@ -431,13 +430,10 @@ def _regiao_do_cep(cep):
 
 def _obter_cep(handler_input):
     """Tenta obter o CEP via Device Address API. Retorna None se sem permissão."""
-    try:
-        sc = handler_input.service_client_factory.get_device_address_service_client()
-        device_id = handler_input.request_envelope.context.system.device.device_id
-        addr = sc.get_country_and_postal_code(device_id)
-        return addr.postal_code if addr else None
-    except Exception:
-        return None
+    # Device Address API requer CustomSkillBuilder + apiAccessToken.
+    # Por ora, retorna None — a skill funciona sem localização.
+    # TODO: reativar quando a permissão estiver configurada.
+    return None
 
 # Exemplos regionalizados: ave comum + caracteristica marcante por regiao
 _EXEMPLOS_REGIONAIS = {
@@ -989,7 +985,7 @@ class CatchAllExceptionHandler(AbstractExceptionHandler):
             "Desculpe, tive um problema. Pode tentar de novo?"
         ).ask("Pode repetir?").response
 
-sb = CustomSkillBuilder(api_client=DefaultApiClient())
+sb = SkillBuilder()
 sb.add_request_handler(LaunchRequestHandler())
 sb.add_request_handler(QuizRespostaHandler())  # Before CatchAll — takes priority when quiz active
 sb.add_request_handler(QuizRespostaFallbackHandler())  # When no quiz, treat as species lookup
